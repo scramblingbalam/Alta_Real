@@ -59,26 +59,23 @@ walk = os.walk(top_path)
 source_id = ""
 reply_id = ""
 
-#grah_up_dic = {}
-#graph_down_dic = {}
-#graph_tup = ()
-
 for current_dir in walk:
     last_dir = current_dir[0].split("\\")[-1]
     if last_dir == "source-tweet" or last_dir == "replies":
         for json_path in current_dir[-1]:
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                 filedic = json.load(jsonfile)
-                if filedic["lang"] =="en":
-                    # the two conditionals below will be used to build the tree structure
-    #                if last_dir == "source-tweet":
-    #                    source_id = current_dir[0].split(".")[0]
-    #                if last_dir == "replies":
-                    text_in = filedic["text"].replace("\n","N3WL1N3")#+'\r\n'
-                    print(text_in)
-                    encoded_text = " ".join(twit_token.ize(text_in))
-                    id_text_dic[filedic["id"]] = encoded_text
-                    text_list.append(encoded_text)
+
+                    text_in = filedic["text"].lower().replace("\n","N3WL1N3")#+'\r\n'
+
+                    zub_text = nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', tweet.lower()))
+                    zub_id_text_dic[filedic["id"]] = encoded_text
+                    zub_text_list.append(encoded_text)
+
+                    twit_text = " ".join(twit_token.ize(text_in))
+                    twit_id_text_dic[filedic["id"]] = twit_text
+                    twit_text_list.append(twit_text)
+
                     id_list.append(filedic["id"])
                 
 # I save all the containers I use to create teh doc2vec training file 
@@ -86,30 +83,29 @@ for current_dir in walk:
 # I'll have all the data I need to ask any question I want to
                  
 doc2vec_dir ="Data/doc2vec/"
-with open(doc2vec_dir+"id_text_dic.cpickle","wb") as picfile:
-    pickle.dump(id_text_dic,picfile)
+with open(doc2vec_dir+"twit_id_text_dic.cpickle","wb") as picfile:
+    pickle.dump(twit_id_text_dic,picfile)
 
-with open(doc2vec_dir+"text_list.cpickle","wb") as picfile:
-    pickle.dump(text_list,picfile)    
+with open(doc2vec_dir+"twit_text_list.cpickle","wb") as picfile:
+    pickle.dump(twit_text_list,picfile)    
     
+with open(doc2vec_dir+"twit_doc2vec_train_corpus.txt","wb")as corpusfile:
+    corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in twit_text_list])
+
+
+
+with open(doc2vec_dir+"zub_id_text_dic.cpickle","wb") as picfile:
+    pickle.dump(zub_id_text_dic,picfile)
+
+with open(doc2vec_dir+"zub_text_list.cpickle","wb") as picfile:
+    pickle.dump(zub_text_list,picfile)    
+    
+with open(doc2vec_dir+"zub_doc2vec_train_corpus.txt","wb")as corpusfile:
+    corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in zub_text_list])
+
+
+
 with open(doc2vec_dir+"id_list.cpickle","wb") as picfile:
     pickle.dump(id_list,picfile)     
 
 
-with open(doc2vec_dir+"doc2vec_train_corpus.txt","wb")as corpusfile:
-#    for txt in text_list:
-#        print(txt,file=corpusfile)
-    corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in text_list])
-
-
-#test_dic = {}    
-#with open(doc2vec_dir+"id_text_dic.cpickle","rb") as picfile:
-#    test_dic = pickle.load(picfile)
-#
-#for k,v in test_dic.items():
-#    print k
-#    print v
-#    print "\n"
-
-print(uniD.name(u"Å").split()[0] == "LATIN")
-#print uniD.name(u"😱")
