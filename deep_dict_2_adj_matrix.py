@@ -15,7 +15,6 @@ def flatten(listOfLists):
     
 def walk(dic, parent=None, mem_set = None, adj=None):
     if not isinstance(dic,dict):
-        print adj,"NOT_DIC"
         return adj
     else:
         if parent is None and mem_set is None:
@@ -56,9 +55,10 @@ def dic_2_adj_mat(Dic):
             out_set.add(i)   
     id_dic = {ID:num for num,ID in enumerate(unique_out)}
     walk_out = list(set([(parent,child) 
-            for parent,child in 
-                zip(out[::2],out[1::2])]))
-    adj_mat =np.zeros((len(walk_out),len(walk_out)))
+                    for parent,child in 
+                        zip(out[::2],out[1::2])]
+                    ))
+    adj_mat =np.zeros((len(walk_out)+1,len(walk_out)+1))
     for i,j in walk_out:
         adj_mat[id_dic[i],id_dic[j]]=1
     return adj_mat,id_dic 
