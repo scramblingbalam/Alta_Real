@@ -66,17 +66,17 @@ for current_dir in walk:
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                 filedic = json.load(jsonfile)
 
-                    text_in = filedic["text"].lower().replace("\n","N3WL1N3")#+'\r\n'
+                text_in = filedic["text"].lower().replace("\n","N3WL1N3")#+'\r\n'
 
-                    zub_text = nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', tweet.lower()))
-                    zub_id_text_dic[filedic["id"]] = encoded_text
-                    zub_text_list.append(encoded_text)
+                zub_text = nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', tweet.lower()))
+                zub_id_text_dic[filedic["id"]] = encoded_text
+                zub_text_list.append(encoded_text)
 
-                    twit_text = " ".join(twit_token.ize(text_in))
-                    twit_id_text_dic[filedic["id"]] = twit_text
-                    twit_text_list.append(twit_text)
+                twit_text = " ".join(twit_token.ize(text_in))
+                twit_id_text_dic[filedic["id"]] = twit_text
+                twit_text_list.append(twit_text)
 
-                    id_list.append(filedic["id"])
+                id_list.append(filedic["id"])
                 
 # I save all the containers I use to create teh doc2vec training file 
 # I do this to make sure that debugging doc2vec will be easy and 
