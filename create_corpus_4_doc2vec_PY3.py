@@ -13,6 +13,7 @@ import pickle
 import twit_token
 import unicodedata as uniD
 import nltk
+import re
 
 
 train_dir = "Data/semeval2017-task8-dataset"
@@ -50,8 +51,12 @@ ferg_7_path = "/".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguson
 top_path = "/".join([train_dir,train_data_dir])
 #top_path = ferg_1_path 
 
-id_text_dic = {}
-text_list = []
+zub_id_text_dic = {}
+twit_id_text_dic = {}
+
+zub_text_list = []
+twit_text_list = []
+
 id_list = []
 
 walk = os.walk(top_path)
@@ -65,12 +70,14 @@ for current_dir in walk:
         for json_path in current_dir[-1]:
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                 filedic = json.load(jsonfile)
-
-                text_in = filedic["text"].lower().replace("\n","N3WL1N3")#+'\r\n'
-
-                zub_text = nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', tweet.lower()))
-                zub_id_text_dic[filedic["id"]] = encoded_text
-                zub_text_list.append(encoded_text)
+                
+                text =  filedic["text"].lower()
+                
+                zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
+                zub_id_text_dic[filedic["id"]] = zub_text
+                zub_text_list.append(zub_text)
+                
+                text_in = text.replace("\n","N3WL1N3")#+'\r\n'
 
                 twit_text = " ".join(twit_token.ize(text_in))
                 twit_id_text_dic[filedic["id"]] = twit_text
@@ -99,7 +106,9 @@ with open(doc2vec_dir+"zub_id_text_dic.cpickle","wb") as picfile:
 
 with open(doc2vec_dir+"zub_text_list.cpickle","wb") as picfile:
     pickle.dump(zub_text_list,picfile)    
-    
+
+print(zub_text_list[0])    
+print(type(zub_text_list[0]))
 with open(doc2vec_dir+"zub_doc2vec_train_corpus.txt","wb")as corpusfile:
     corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in zub_text_list])
 
