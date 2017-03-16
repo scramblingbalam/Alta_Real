@@ -20,6 +20,7 @@ import networkx as nx
 import numpy as np
 import itertools as it
 import pprint
+import deep_dict_2_adj_matrix as dic2mat
 pp = pprint.PrettyPrinter(indent=0)
 
 
@@ -100,208 +101,44 @@ with open(doc2vec_dir+"id_list.json","rb") as picfile:
     id_list = json.load(picfile)
 id_dic = {ID:i for i,ID in enumerate(id_list)}
 
+fail_id_list =[]
 structure = {}
- 
-A = np.zeros((len(id_list),len(id_pos_dic)),dtype=np.int)
 
-def flatten(listOfLists):
-    "Flatten one level of nesting"
-    return it.chain.from_iterable(listOfLists)
-
-def deep_dic2adj_mat(dic,key_list=None,adj_mat=None):
-    print key_list
-    if key_list:
-        print len(key_list)
-    for k,v in dic.items():
-        parent = k
-        if v:
-            children = v.keys()
-            if adj_mat == None:
-                adj_mat =[[0]]
-                for child in children:
-                    adj_mat[0].append(1)
-                for child in children:
-                    adj_mat.append([1]+[0]*len(children))
-            elif key_list:
-                len(key_list)
-                
-            if not key_list:
-                key_list = [parent]
-                for child in children:
-                    key_list.append(child)
-            else:
-                for child in children:
-                    key_list.append(child)
-                
-            deep_dic2adj_mat(v,key_list,adj_mat)
-        else:
-            return key_list,adj_mat
-        
-        
-def reach(travel_dict, x, visited=None):
-    if visited is None:
-        visited = set() # see note
-    visited.add(x)
-    for y in travel_dict.get(x, []):
-        if y not in visited:
-            yield y
-            for z in reach(travel_dict, y, visited):
-                yield z
-                
-#for y in reach(travel_dict, x):
-#    print("you can go to", y)
-    
-
-
-def deep_dic2adj_mat(dic):
-    if isinstance(dic,dict):
-        for k,v in dic.items():
-            if isinstance(v,dict):
-                children = v.keys()
-                for child in children:
-                    yield (k,child)
-#                for i in deep_dic2adj_mat(v):
-#                    yield list(i)
-            else:
-                yield deep_dic2adj_mat(v)
-    else:
-        yield deep_dic2adj_mat(dic)   
-#def dicts(t): return {k: dicts(t[k]) for k in t}
-
-def get_child_perms(self, folder, request, perm_list):
-    # Folder contains other folders
-    children =  folder.get_children()
-    if children:
-        # For every sub-folder
-        return [self.get_child_perms(subfolder, request, perm_list)
-                for subfolder in children]
-        
-    return [folder.has_read_permission(request)]
-
-def deep_dic2adj_mat(dic, memo = [], parent = None):
-    if parent == None:
-        for k, v in dic.items():
-            if isinstance(v,dict):
-                memo += [(k,child) for child in v.keys()]
-                return memo + [deep_dic2adj_mat(v,memo, chi) for chi in v.keys()]
-            else:
-                return memo + []
-    else:
-        for k, v in dic.items():
-            if isinstance(v,dict):
-                memo += [(k,child) for child in v.keys()]
-                return memo + [deep_dic2adj_mat(v,memo, chi) for chi in v.keys()]
-            else:
-                return memo + [parent]
-            
-#def deep_dic2adj_mat(dic, parent = None):
-#    if not isinstance(dic,dict):
-#        pass
-#    if parent == None:
-#        for k, v in dic.items():
-#            if isinstance(v,dict):
-#                for child in v.keys():
-#                    yield (k,child)
-#    else:
-#        
-
-
-           
-#def deep_dic2adj_mat(dic, tup=None):
-#    for k,v in dic.items(): 
-#        print v,"V"
-#        if not isinstance(v,dict):
-#            return [(k,tup)]
-#        else:
-#            for child in v.keys():
-#                print k,"PArent"
-#                print child,"Child"
-#                tup = (k,child)
-#                return [tup] + deep_dic2adj_mat(v,child)
-
-def factorial(n):
-    if n == 0:
-        return 1
-    else:
-        return n * factorial(n - 1)
- 
-print"\n"
 for current_dir in walk:
+    adj_mat = np.array([])
     if 'structure.json' in current_dir[-1]:
-        if A.any():
-            G = nx.from_numpy_matrix(np.array(A)) 
-            nx.draw(G, with_labels=True)
+        en_id = []
+#        if adj_mat.any():
+#            G = nx.from_numpy_matrix(np.array(adj_mat)) 
+#            nx.draw(G, with_labels=True)
         root_id = long(current_dir[0].split("\\")[-1])
 #        print root_id, "root",root_id in id_list
         with open(current_dir[0]+"\\"+'structure.json',"r")as jsonfile:
                 structure = json.load(jsonfile)
-#        for k,v in structure.items():
-#                print structure
-#                print k
-#                print v.keys()
-#   
-        if len(structure.keys()) >1:
+                adj_mat,id_dic  = dic2mat.dic_2_adj_mat(structure)
+                # pp.pprint(structure)
+                id_set =set(k for k,v in id_dic.items())
+    last_dir = current_dir[0].split("\\")[-1]
+    if last_dir == "source-tweet" or last_dir == "replies":
+#        print id_set
+        for json_path in current_dir[-1]:
+#            print "#########\n",current_dir[0],json_path,"######\n"
+            with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
+                filedic = json.load(jsonfile)
+                if filedic['lang'] =='en':
+                    en_id.append(filedic['id'])
+                    tokenizer = nltk.RegexpTokenizer(r'\w+|[^\w\s]+')
+#                    tokenizer = nltk.RegexpTokenizer(u'\w+|[^\w\s\\U]+')
+#                    print [tok for tok in nltk.word_tokenize(filedic["text"].replace("\n",""))],"\n"
+#                    print " ".join(tokenizer.tokenize(filedic["text"].replace("\n",""))),"\n########################\n"
+    
+#        print en_id
+#        print id_set
+#        print len(en_id),"en"
+#        print len(id_set),"set"
+        if id_set and len(en_id) ==0:
             print current_dir
-            pp.pprint(structure)
-            print "\n##################################"
-#        print "\n"
-#        test =[]
-#        for k,v in structure.items():
-#            test.append(k)
-#            test += v.keys()
-#            for k1,v1 in v.items():
-#                test.append(k1)
-#                if v1:
-#                    test += v1.keys()
-#                for k2,v2 in structure.items():
-#                    test.append(k2)
-#                    if v2:
-#                        test += v2.keys()
-##        print test
-#        struc =deep_dic2adj_mat(structure)
-#        print struc,"\n"
-#        for i in struc:
-#            print i,"I"
-#            for j in i:
-#                print j
-
-                
-#        for i in [(k,v) for k,V in structure.items() for v in V.keys()]:
-#            print i
-
-#for current_dir in walk:
-#    if 'structure.json' in current_dir[-1]:
-#        if A.any():
-#            G = nx.from_numpy_matrix(np.array(A)) 
-#            nx.draw(G, with_labels=True)
-#        root_id = long(current_dir[0].split("\\")[-1])
-##        print root_id, "root",root_id in id_list
-#        with open(current_dir[0]+"\\"+'structure.json',"r")as jsonfile:
-#                structure = json.load(jsonfile)
-#    last_dir = current_dir[0].split("\\")[-1]
-#    if last_dir == "source-tweet" or last_dir == "replies":
-#        for json_path in current_dir[-1]:
-##            print "#########\n",current_dir[0],json_path,"######\n"
-#            with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
-#                filedic = json.load(jsonfile)
-#                if filedic["lang"] =="en":
-#                    # the two conditionals below will be used to build the tree structure
-#    #                if last_dir == "source-tweet":
-#    #                    source_id = current_dir[0].split(".")[0]
-#    #                if last_dir == "replies":
-#                    encoded_text = filedic["text"].replace("\n","").encode("UTF-8")
-#                    twt_id = filedic["id"]
-#                    print "\t",twt_id,"id"
-#                    print structure
-#                    print structure[str(root_id)][twt_id]
-##                    print encoded_text,"\n"
-#                    tokenizer = nltk.RegexpTokenizer(r'\w+|[^\w\s]+')
-##                    tokenizer = nltk.RegexpTokenizer(u'\w+|[^\w\s\\U]+')
-##                    print [tok for tok in nltk.word_tokenize(filedic["text"].replace("\n",""))],"\n"
-##                    print " ".join(tokenizer.tokenize(filedic["text"].replace("\n",""))),"\n########################\n"
-#                    id_text_dic[twt_id] = encoded_text
-#                    text_list.append(encoded_text)
-#                    id_list.append(twt_id)
+#        print"\n"
 
 
                 
