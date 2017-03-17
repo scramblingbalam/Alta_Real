@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+
 Created on Thu Mar 02 16:32:18 2017
 
 @author: Colin Dryaton cdrayton@umich.edu
@@ -8,10 +9,12 @@ Created on Thu Mar 02 16:32:18 2017
 
 import json
 import os
-import cPickle as pickle
-#import twit_token
+import pickle
+#import cPickle as pickle
+import twit_token
 import unicodedata as uniD
 import nltk
+import re
 
 
 train_dir = "Data/semeval2017-task8-dataset"
@@ -47,10 +50,14 @@ ferg_6_path = "/".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguson
 ferg_7_path = "/".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguson_7])
 
 top_path = "/".join([train_dir,train_data_dir])
-top_path = ferg_1_path 
+#top_path = ferg_1_path 
 
-id_text_dic = {}
-text_list = []
+zub_id_text_dic = {}
+twit_id_text_dic = {}
+
+zub_text_list = []
+twit_text_list = []
+
 id_list = []
 
 walk = os.walk(top_path)
@@ -58,52 +65,57 @@ walk = os.walk(top_path)
 source_id = ""
 reply_id = ""
 
-#grah_up_dic = {}
-#graph_down_dic = {}
-#graph_tup = ()
-test_char = u"“"
-print test_char
-print uniD.name(test_char)
 for current_dir in walk:
     last_dir = current_dir[0].split("\\")[-1]
     if last_dir == "source-tweet" or last_dir == "replies":
         for json_path in current_dir[-1]:
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                 filedic = json.load(jsonfile)
-                if filedic["lang"] =="en":
-                    # the two conditionals below will be used to build the tree structure
-    #                if last_dir == "source-tweet":
-    #                    source_id = current_dir[0].split(".")[0]
-    #                if last_dir == "replies":
+                
+                text =  filedic["text"].lower()
+                
+                zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
+                zub_id_text_dic[filedic["id"]] = zub_text
+                zub_text_list.append(zub_text)
+                
+                text_in = text.replace("\n","N3WL1N3")#+'\r\n'
 
-                    encoded_text = filedic["text"].replace("\n","").encode("UTF-8")
-                    print encoded_text,"\n"
-                    tokenizer = nltk.RegexpTokenizer(r'\w+|[^\w\s]+')
-                    tokenizer = nltk.RegexpTokenizer(u'\w+|[^\w\s\\U]+')
-                    print [tok for tok in nltk.word_tokenize(filedic["text"].replace("\n",""))],"\n"
-                    print tokenizer.tokenize(filedic["text"].replace("\n","")),"\n########################\n"
-                    id_text_dic[filedic["id"]] = encoded_text
-                    text_list.append(encoded_text)
-                    id_list.append(filedic["id"])
+                twit_text = " ".join(twit_token.ize(text_in))
+                twit_id_text_dic[filedic["id"]] = twit_text
+                twit_text_list.append(twit_text)
+
+                id_list.append(filedic["id"])
                 
 # I save all the containers I use to create teh doc2vec training file 
 # I do this to make sure that debugging doc2vec will be easy and 
 # I'll have all the data I need to ask any question I want to
                  
 doc2vec_dir ="Data/doc2vec/"
-with open(doc2vec_dir+"id_text_dic.cpickle","wb") as picfile:
-    pickle.dump(id_text_dic,picfile)
+with open(doc2vec_dir+"twit_id_text_dic.cpickle","wb") as picfile:
+    pickle.dump(twit_id_text_dic,picfile)
 
-with open(doc2vec_dir+"text_list.cpickle","wb") as picfile:
-    pickle.dump(text_list,picfile)    
+with open(doc2vec_dir+"twit_text_list.cpickle","wb") as picfile:
+    pickle.dump(twit_text_list,picfile)    
     
+with open(doc2vec_dir+"twit_doc2vec_train_corpus.txt","wb")as corpusfile:
+    corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in twit_text_list])
+
+
+
+with open(doc2vec_dir+"zub_id_text_dic.cpickle","wb") as picfile:
+    pickle.dump(zub_id_text_dic,picfile)
+
+with open(doc2vec_dir+"zub_text_list.cpickle","wb") as picfile:
+    pickle.dump(zub_text_list,picfile)    
+
+print(zub_text_list[0])    
+print(type(zub_text_list[0]))
+with open(doc2vec_dir+"zub_doc2vec_train_corpus.txt","wb")as corpusfile:
+    corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in zub_text_list])
+
+
+
 with open(doc2vec_dir+"id_list.cpickle","wb") as picfile:
     pickle.dump(id_list,picfile)     
-    
-with open(doc2vec_dir+"doc2vec_train_corpus.txt","w")as corpusfile:
-    for num,txt in enumerate(text_list):
-        if num != 0:
-            corpusfile.write("\n")
-        corpusfile.write(txt)
-        
+
 
