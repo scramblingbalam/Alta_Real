@@ -107,13 +107,3 @@ with open(doc2vec_dir+"doc2vec_train_corpus.txt","w")as corpusfile:
         corpusfile.write(txt)
         
 
-#test_dic = {}    
-#with open(doc2vec_dir+"id_text_dic.cpickle","rb") as picfile:
-#    test_dic = pickle.load(picfile)
-#
-#for k,v in test_dic.items():
-#    print k
-#    print v
-#    print "\n"
-print uniD.name(u"Å").split()[0] == "LATIN"
-#print uniD.name(u"😱")

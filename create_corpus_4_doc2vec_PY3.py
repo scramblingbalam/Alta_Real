@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+<<<<<<< HEAD
 Created on Thu Mar 02 16:32:18 2017
 
 @author: Colin Dryaton cdrayton@umich.edu
