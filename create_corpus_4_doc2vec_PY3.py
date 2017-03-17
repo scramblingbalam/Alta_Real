@@ -91,31 +91,29 @@ for current_dir in walk:
 # I'll have all the data I need to ask any question I want to
                  
 doc2vec_dir ="Data/doc2vec/"
-with open(doc2vec_dir+"twit_id_text_dic.cpickle","wb") as picfile:
-    pickle.dump(twit_id_text_dic,picfile)
+with open(doc2vec_dir+"twit_id_text_dic.json","w") as picfile:
+    json.dump(twit_id_text_dic,picfile)
 
-with open(doc2vec_dir+"twit_text_list.cpickle","wb") as picfile:
-    pickle.dump(twit_text_list,picfile)    
+with open(doc2vec_dir+"twit_text_list.json","w") as picfile:
+    json.dump(twit_text_list,picfile)    
     
 with open(doc2vec_dir+"twit_doc2vec_train_corpus.txt","wb")as corpusfile:
     corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in twit_text_list])
 
 
 
-with open(doc2vec_dir+"zub_id_text_dic.cpickle","wb") as picfile:
-    pickle.dump(zub_id_text_dic,picfile)
+with open(doc2vec_dir+"zub_id_text_dic.json","w") as picfile:
+    json.dump(zub_id_text_dic,picfile)
 
-with open(doc2vec_dir+"zub_text_list.cpickle","wb") as picfile:
-    pickle.dump(zub_text_list,picfile)    
+with open(doc2vec_dir+"zub_text_list.json","w") as picfile:
+    json.dump(zub_text_list,picfile)    
 
-print(zub_text_list[0])    
-print(type(zub_text_list[0]))
 with open(doc2vec_dir+"zub_doc2vec_train_corpus.txt","wb")as corpusfile:
     corpusfile.writelines([txt.encode("utf8")+"\r\n".encode("utf8") for txt in zub_text_list])
 
 
 
-with open(doc2vec_dir+"id_list.cpickle","wb") as picfile:
-    pickle.dump(id_list,picfile)     
+with open(doc2vec_dir+"id_list.json","w") as picfile:
+    json.dump(id_list,picfile)     
 
 
