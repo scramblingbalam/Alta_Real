@@ -21,14 +21,15 @@ import numpy as np
 import itertools as it
 import pprint
 import deep_dict_2_adj_matrix as dic2mat
+import collections as coll
 pp = pprint.PrettyPrinter(indent=0)
 
 
 doc2vec_dir ="Data/doc2vec/"
 model = models.Doc2Vec.load(doc2vec_dir+token_type+'rumorEval_doc2vec_set'+dims+'.model')
-print model.most_similar('black')
+print model.most_similar('black'),"\n"
 
-train_dir = "Data/semeval2017-task8-dataset"
+train_dir = "Data\\semeval2017-task8-dataset"
 train_dic_dir = "traindev"
 
 train_data_dir ="rumoureval-data"
@@ -69,40 +70,92 @@ id_list = []
 
 walk = os.walk(top_path)
 
-source_id = ""
-reply_id = ""
+
+POS_dir ="Data\\twitIE_pos\\"
+doc2vec_dir ="Data\\doc2vec\\"
+
+ids_around_IDless_tweets=[136,139,1085,1087]
 
 
-POS_dir ="Data/twitIE_pos/"
-#grah_up_dic = {}
-#graph_down_dic = {}
-#graph_tup = ()
-pos_tweets = []
-with open(POS_dir+"corpus_twitIE_POS","r")as POSfile:
-    pos_tweets = [json.loads(twt) for twt in POSfile.readlines()]
+def pos_extract(path):
+    pos_tweets = []
+    with open(path,"r")as POSfile:
+        pos_tweets = [json.loads(twt) for twt in POSfile.readlines()]
+    #create set of all used POS tags
+    pos_tag_set = set([pos['category'] for twt in pos_tweets for pos in twt[u'entities'][u'Token']])
 
-ids_around_IDless_tweets=[136,139,1085,1087]        
+    #create dictionary of POS_Tags and vector indicies
+    pos_index_dic = {pos:num for num,pos in enumerate(pos_tag_set)}
+    #create inverse lookup dictionary
+    i_p_dic = {num:pos for num,pos in enumerate(pos_tag_set)}
+    # create dictionary of POS tag lists for keyed by ID
+    dic = {twt['id']:twt[u'entities'][u'Token'] for twt in pos_tweets if 'id' in twt}
+    id_p_dic ={}
+    for K,V in dic.items():
+        vector = []
+        for v in V:
+            vector.append(pos_index_dic[v['category']])
+        id_p_dic[K]=vector
+    id_p_dic = {K:[pos_index_dic[v['category']] for v in V] for K,V in dic.items()}
+    return id_p_dic, i_p_dic
 
-id_pos_dic = {twt['id']:twt for twt in pos_tweets if 'id' in twt and twt["lang"]=='en'}
 
-languages =[u'fr', u'en', u'und', u'es', u'pt']
 
-doc2vec_dir ="Data/doc2vec/"
-#id_text_dic = {}
-#with open(doc2vec_dir+token_type+"id_text_dic.cpickle","rb") as picfile:
-#    id_text_dic = pickle.load(picfile)
 
-text_list = []
-with open(doc2vec_dir+token_type+"text_list.json","r") as picfile:
-    text_list = json.load(picfile)    
+#text_list = []
+#with open(doc2vec_dir+token_type+"text_list.json","r") as picfile:
+#    text_list = json.load(picfile)    
+#    
+#id_list = []
+#with open(doc2vec_dir+"id_list.json","rb") as picfile:
+#    id_list = json.load(picfile)
+#id_dic = {ID:i for i,ID in enumerate(id_list)}
+#
+#fail_id_list =[]
+#structure = {}
+#
+#current_event = ""
+#current_line_dic = {}
+#lang_event_csv = []
+#lang_list=[]
+#non_english_event =[]
+
+pos_file_path =POS_dir+"corpus_twitIE_POS"
+id_pos_dic, index_pos_dic = pos_extract(pos_file_path)
+swear_path = "Data\\badwords.txt"
+swear_list=[]
+with open(swear_path,"r")as swearfile:
+    swear_list = swearfile.readlines()
     
-id_list = []
-with open(doc2vec_dir+"id_list.json","rb") as picfile:
-    id_list = json.load(picfile)
-id_dic = {ID:i for i,ID in enumerate(id_list)}
+negationwords = ['not', 'no', 'nobody', 'nothing', 'none', 
+                 'never', 'neither', 'nor', 'nowhere', 'hardly', 
+                 'scarcely', 'barely', 'don*', 'isn*', 'wasn*', 
+                 'shouldn*', 'wouldn*', 'couldn*', 'doesn*',
+                 'don', 'isn', 'wasn', 'nothin',
+                 'shouldn', 'wouldn', 'couldn', 'doesn']
 
-fail_id_list =[]
-structure = {}
+id_text_dic ={}
+with open(doc2vec_dir+token_type+"id_text_dic.json",'r')as textDicFile:
+    id_text_dic = json.load(textDicFile)
+
+
+def word_bool(text,word_list,cont="*"):
+    if cont:
+        word_list = [string.replace("\n","") for string in word_list]
+        word_list = [s.replace(cont,"")+" " if s[-1] != "*" else s for s in word_list]
+        word_list = [" "+s.replace(cont,"") if s[0] != "*" else s for s in word_list]
+    
+    bad_list= [swear for swear in word_list if swear in text]
+    if bad_list:
+        print bad_list
+    return bool(bad_list)
+        
+def word_char_count(text):
+    return len(text.split()),len(text)
+#for i,i1,i2 in zip(swear_list,swear_list1,swear_list2):
+#        print i,i1,i2
+#    swear_list = swearfile.readlines()
+
 
 for current_dir in walk:
     adj_mat = np.array([])
@@ -125,32 +178,17 @@ for current_dir in walk:
 #            print "#########\n",current_dir[0],json_path,"######\n"
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                 filedic = json.load(jsonfile)
-                if filedic['lang'] =='en':
-                    en_id.append(filedic['id'])
-                    tokenizer = nltk.RegexpTokenizer(r'\w+|[^\w\s]+')
-#                    tokenizer = nltk.RegexpTokenizer(u'\w+|[^\w\s\\U]+')
-#                    print [tok for tok in nltk.word_tokenize(filedic["text"].replace("\n",""))],"\n"
-#                    print " ".join(tokenizer.tokenize(filedic["text"].replace("\n",""))),"\n########################\n"
-    
-#        print en_id
-#        print id_set
-#        print len(en_id),"en"
-#        print len(id_set),"set"
-        if id_set and len(en_id) ==0:
-            print current_dir
-#        print"\n"
-
-
+                text =filedic['text']
+                ID = filedic['id_str']
+                print id_text_dic[ID]
+                print word_char_count(id_text_dic[ID])
                 
-# I save all the containers I use to create teh doc2vec training file 
-# I do this to make sure that debugging doc2vec will be easy and 
-# I'll have all the data I need to ask any question I want to
-                 
-    
-#    
-#with open(doc2vec_dir+"doc2vec_train_corpus.txt","wb")as corpusfile:
-#    for num,txt in enumerate(text_list):
-#        if num != 0:
-#            corpusfile.write("\n")
-#        corpusfile.write(txt)
-#        
+#                swear_bool = word_bool(text,swear_list)
+#                neg_bool = word_bool(text,negationwords)
+#                print id_pos_dic[filedic["id"]],"\n"
+                
+#print swear_list
+#
+#print coll.Counter(non_english_event)
+#print coll.Counter(lang_list)
+#                
