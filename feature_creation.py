@@ -181,11 +181,11 @@ for current_dir in walk:
                 text =filedic['text']
                 ID = filedic['id_str']
                 print id_text_dic[ID]
-                print word_char_count(id_text_dic[ID])
                 
-#                swear_bool = word_bool(text,swear_list)
-#                neg_bool = word_bool(text,negationwords)
-#                print id_pos_dic[filedic["id"]],"\n"
+                word_count,char_count = word_char_count(id_text_dic[ID])
+                swear_bool = word_bool(text,swear_list)
+                neg_bool = word_bool(text,negationwords)
+                pos_vec = id_pos_dic[filedic["id"]],"\n"
                 
 #print swear_list
 #
