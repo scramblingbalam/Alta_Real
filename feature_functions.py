@@ -10,7 +10,7 @@ import json
 import nltk
 import numpy as np
 import re
-
+# module that creates features for a CRF model
 
 
 def pos_extract(path):
