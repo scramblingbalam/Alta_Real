@@ -63,7 +63,7 @@ ferg_6_path = "\\".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguso
 ferg_7_path = "\\".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguson_7])
 
 top_path = "\\".join([train_dir,train_data_dir])
-#top_path = ferg_2_path 
+top_path = ferg_2_path 
 
 id_text_dic = {}
 text_list = []
@@ -174,9 +174,41 @@ def entitiy_binary_gen(tweet_dic,key_list):
         else:
             yield int(False)
 
+def dic_path_recurse(dic, path):
+    key = path.pop(0)
+    try:
+        out = dic[key]
+        if out and isinstance(out,dict):
+            return dic_path_recurse(out,path)
+        else:
+            return out
+    except:
+        return False
+    
+def attribute_binary_gen(tweet_dic,path_list):
+    """ Takes a tweets json dic and a list of keys from the entities attribute
+            possible top level keys:
+        [u'favorited', u'retweet_count', u'in_reply_to_user_id', u'contributors', 
+        u'truncated', u'retweeted', u'in_reply_to_status_id_str', u'coordinates',
+        u'filter_level', u'in_reply_to_status_id', u'place', u'favorite_count',
+        u'extended_entities', u'in_reply_to_screen_name', u'metadata', u'geo', 
+        u'in_reply_to_user_id_str', u'possibly_sensitive', u'possibly_sensitive_appealable']
+        Note: [u'filter_level', u'extended_entities', u'metadata'] can be absent
+            possible keys are for 'entity'
+        [u'user_mentions', u'media', u'hashtags', u'symbols', u'trends', u'urls']
+        Note: [u'media'] can be absent and recursion raises exception & returns False
+    """
+    for path in path_list:
+            yield int(bool(dic_path_recurse(tweet_dic, path)))
+
+
+
 punc_list = [u"?",u"!",u"."]
+attribute_paths = [[u'entities',u'media'],
+                   [u'entities',u'urls'],
+                   [u'in_reply_to_screen_name']]
 
-
+attribute_set =set()
 for current_dir in walk:
     adj_mat = np.array([])
     if 'structure.json' in current_dir[-1]:
@@ -200,9 +232,8 @@ for current_dir in walk:
                 filedic = json.load(jsonfile)
                 text =filedic['text']
                 ID = filedic['id_str']
-
-                is_source_binary = not filedic[u'in_reply_to_screen_name']
-                entity_vec = list(entitiy_binary_gen(filedic,['media','urls']))
+                print "\n",text
+                format_binary_vec = list(attribute_binary_gen(filedic, attribute_paths))
                 punc_vec = list(punc_binary_gen(text,punc_list))
                 if token_type == "zub_":
                     cap_ratio = zub_capital_ratio(text)
@@ -213,6 +244,7 @@ for current_dir in walk:
                 swear_bool = word_bool(text,swear_list)
                 neg_bool = word_bool(text,negationwords)
                 pos_vec = id_pos_dic[filedic["id"]],"\n"
+
 
 
 #print swear_list
