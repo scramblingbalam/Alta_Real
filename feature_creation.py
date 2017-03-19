@@ -176,6 +176,7 @@ def entitiy_binary_gen(tweet_dic,key_list):
 
 punc_list = [u"?",u"!",u"."]
 
+
 for current_dir in walk:
     adj_mat = np.array([])
     if 'structure.json' in current_dir[-1]:
@@ -199,7 +200,8 @@ for current_dir in walk:
                 filedic = json.load(jsonfile)
                 text =filedic['text']
                 ID = filedic['id_str']
-                print "\n",text
+
+                is_source_binary = not filedic[u'in_reply_to_screen_name']
                 entity_vec = list(entitiy_binary_gen(filedic,['media','urls']))
                 punc_vec = list(punc_binary_gen(text,punc_list))
                 if token_type == "zub_":
