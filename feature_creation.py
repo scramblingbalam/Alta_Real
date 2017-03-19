@@ -162,9 +162,20 @@ def zub_capital_ratio(text):
 def punc_binary_gen(text,puncs):
     for punc in puncs:
         yield int(np.array([char==punc for char in text]).any())
+        
+def entitiy_binary_gen(tweet_dic,key_list):
+    """ Takes a tweets json dic and a list of keys from the entities attribute
+        possible keys are
+        [u'user_mentions', u'media', u'hashtags', u'symbols', u'trends', u'urls']
+    """
+    for key in key_list:
+        if key in tweet_dic['entities']:
+            yield int(bool(tweet_dic['entities'][key]))
+        else:
+            yield int(False)
 
 punc_list = [u"?",u"!",u"."]
-unicode_punc_list =[]
+
 for current_dir in walk:
     adj_mat = np.array([])
     if 'structure.json' in current_dir[-1]:
@@ -188,9 +199,9 @@ for current_dir in walk:
                 filedic = json.load(jsonfile)
                 text =filedic['text']
                 ID = filedic['id_str']
-                print text
+                print "\n",text
+                entity_vec = list(entitiy_binary_gen(filedic,['media','urls']))
                 punc_vec = list(punc_binary_gen(text,punc_list))
-                print punc_vec
                 if token_type == "zub_":
                     cap_ratio = zub_capital_ratio(text)
                 elif token_type == "twit_":
