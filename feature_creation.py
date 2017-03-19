@@ -147,8 +147,6 @@ def word_bool(text,word_list,cont="*"):
         word_list = [" "+s.replace(cont,"") if s[0] != "*" else s for s in word_list]
     
     bad_list= [swear for swear in word_list if swear in text]
-    if bad_list:
-        print bad_list
     return bool(bad_list)
         
 def word_char_count(text):
@@ -161,7 +159,12 @@ def zub_capital_ratio(text):
     alpha_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', text )))
     return float(sum([char.isupper() for char in alpha_text]))/float(len(alpha_text))
 
+def punc_binary_gen(text,puncs):
+    for punc in puncs:
+        yield int(np.array([char==punc for char in text]).any())
 
+punc_list = [u"?",u"!",u"."]
+unicode_punc_list =[]
 for current_dir in walk:
     adj_mat = np.array([])
     if 'structure.json' in current_dir[-1]:
@@ -186,17 +189,19 @@ for current_dir in walk:
                 text =filedic['text']
                 ID = filedic['id_str']
                 print text
+                punc_vec = list(punc_binary_gen(text,punc_list))
+                print punc_vec
                 if token_type == "zub_":
                     cap_ratio = zub_capital_ratio(text)
                 elif token_type == "twit_":
                     print "ERROR write a better captial ratio function"
-                    break 
-                print cap_ratio                   
+                    break                  
                 word_count,char_count = word_char_count(id_text_dic[ID])
                 swear_bool = word_bool(text,swear_list)
                 neg_bool = word_bool(text,negationwords)
                 pos_vec = id_pos_dic[filedic["id"]],"\n"
-                
+
+
 #print swear_list
 #
 #print coll.Counter(non_english_event)
