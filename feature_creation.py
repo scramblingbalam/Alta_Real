@@ -22,6 +22,7 @@ import itertools as it
 import pprint
 import deep_dict_2_adj_matrix as dic2mat
 import collections as coll
+import re
 pp = pprint.PrettyPrinter(indent=0)
 
 
@@ -156,6 +157,10 @@ def word_char_count(text):
 #        print i,i1,i2
 #    swear_list = swearfile.readlines()
 
+def zub_capital_ratio(text):
+    alpha_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', text )))
+    return float(sum([char.isupper() for char in alpha_text]))/float(len(alpha_text))
+
 
 for current_dir in walk:
     adj_mat = np.array([])
@@ -180,8 +185,13 @@ for current_dir in walk:
                 filedic = json.load(jsonfile)
                 text =filedic['text']
                 ID = filedic['id_str']
-                print id_text_dic[ID]
-                
+                print text
+                if token_type == "zub_":
+                    cap_ratio = zub_capital_ratio(text)
+                elif token_type == "twit_":
+                    print "ERROR write a better captial ratio function"
+                    break 
+                print cap_ratio                   
                 word_count,char_count = word_char_count(id_text_dic[ID])
                 swear_bool = word_bool(text,swear_list)
                 neg_bool = word_bool(text,negationwords)
