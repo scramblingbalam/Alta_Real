@@ -16,7 +16,6 @@ def flatten(listOfLists):
     
 def walk(dic, parent=None, mem_set = None, adj=None):
     if not isinstance(dic,dict):
-        print adj,"NOT_DIC"
         return adj
     else:
 #        print adj,"DIC"
@@ -69,4 +68,18 @@ def dic_2_adj_mat(Dic):
     adj_mat =np.zeros((len(walk_out)+1,len(walk_out)+1))
     for i,j in walk_out:
         adj_mat[id_dic[i],id_dic[j]]=1
-    return adj_mat 
+    return adj_mat, id_dic
+
+def dic_2_node_lists(Dic):
+    out = walk(Dic)[-1]
+    unique_out =[]
+    out_set = set()
+    for i in out:
+        if i not in out_set:
+            unique_out.append(i)
+            out_set.add(i)   
+    id_dic = {ID:num for num,ID in enumerate(unique_out)}
+    walk_out = list(set([( id_dic[parent], id_dic[child] )
+            for parent,child in 
+                zip(out[::2],out[1::2])]))
+    return np.array(walk_out), id_dic
