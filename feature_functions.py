@@ -10,7 +10,10 @@ import json
 import nltk
 import numpy as np
 import re
-# module that creates features for a CRF model
+import collections as coll
+import itertools as it
+import pprint
+pp = pprint.PrettyPrinter(indent=0)
 
 
 def pos_extract(path):
@@ -24,7 +27,7 @@ def pos_extract(path):
     pos_index_dic = {pos:num for num,pos in enumerate(pos_tag_set)}
     #create inverse lookup dictionary
     i_p_dic = {num:pos for num,pos in enumerate(pos_tag_set)}
-    # create dictionary of POS tag lists for keyed by ID
+    # create dictionary of POS tag lists for keyed by ID 
     dic = {twt['id']:twt[u'entities'][u'Token'] for twt in pos_tweets if 'id' in twt}
     id_p_dic ={}
     for K,V in dic.items():
@@ -35,6 +38,9 @@ def pos_extract(path):
     id_p_dic = {K:[pos_index_dic[v['category']] for v in V] for K,V in dic.items()}
     return id_p_dic, i_p_dic
 
+def pos_vector(index_vector):
+    count = coll.Counter(index_vector)
+    return [count[i] if i in count else 0 for i in range(49)]
 
 def word_bool(text,word_list,cont="*"):
     if cont:
@@ -99,4 +105,286 @@ def attribute_binary_gen(tweet_dic,path_list):
     """
     for path in path_list:
             yield int(bool(dic_path_recurse(tweet_dic, path)))
+
+
+ID_ORDER = [u'553588178687655936', u'553593923659382784']
+structure = {u'553588178687655936': {u'553588358044483584': [],
+                       u'553588472330452992': [],
+                       u'553588570368532480': [],
+                       u'553588750207680512': [],
+                       u'553588869409832960': [],
+                       u'553589038196981760': [],
+                       u'553589124125323264': [],
+                       u'553589955029512192': [],
+                       u'553590627343302657': [],
+                       u'553591897458237440': [],
+                       u'553593015416008704': [],
+                       u'553593923659382784': []}}
+
+ID_ORDER = [u'553588178687655936', u'553593923659382784']
+structure_test = {u'553588178687655936': {u'test':{u'553588358044483584': []},
+                       u'553588472330452992': [],
+                       u'553588570368532480': [],
+                       u'553588750207680512': [],
+                       u'553588869409832960': [],
+                       u'553589038196981760': [],
+                       u'553589124125323264': [],
+                       u'553589955029512192': [],
+                       u'553590627343302657': [],
+                       u'553591897458237440': [],
+                       u'553593015416008704': [],
+                       u'553593923659382784': []}}
+
+ID_ORDER2 =[u'553587013409325058',
+            
+            u'553587193772793856',
+            
+            u'553587135274815488', 
+            
+            u'553587609759666177',
+            
+            u'553587377835614209', u'553587741720854528',
+            
+            u'553587387889373186',u'553587794686513153',
+            
+            u'553587285074386944',
+            
+            u'553587435511484416',u'553587810859757569',u'553588214859325440',
+                                    u'553588069610569729',
+            
+            u'553587599856906241',
+            
+            u'553587582962253824', u'553587246516174849', u'553587589417304065', 
+            u'553587134838620160', u'553587586241794050', u'553587103922020352', 
+            u'553587395942420480', u'553587551131283458', u'553587383397253120', 
+            u'553587422445846529', u'553587160088338432',  
+             u'553647665695956992', u'553588737750605825', 
+            u'553587882741747713', u'553588653562150912', u'553588971864084481', 
+               
+            u'553588091433537536', u'553587912949121024', u'553588640052674560', 
+            u'553589243583672320', u'553589959937257472']
+
+structure2 ={u'553587013409325058': {u'553587103922020352': [],
+                       u'553587134838620160': [],
+                       u'553587135274815488': [],
+                       u'553587160088338432': [],
+                       u'553587193772793856': [],
+                       u'553587246516174849': [],
+                       u'553587285074386944': [],
+                       u'553587377835614209': {u'553587741720854528': []},
+                       u'553587383397253120': {u'553587912949121024': {u'553588640052674560': {u'553589243583672320': {u'553589959937257472': []}}},
+                                              u'553588091433537536': []},
+                       u'553587387889373186': {u'553587794686513153': [],
+                                              u'553587882741747713': [],
+                                              u'553588653562150912': [],
+                                              u'553588737750605825': [],
+                                              u'553588971864084481': [],
+                                              u'553647665695956992': []},
+                       u'553587395942420480': [],
+                       u'553587422445846529': [],
+                       u'553587435511484416': {u'553587810859757569': {u'553588214859325440': []},
+                                              u'553588069610569729': []},
+                       u'553587551131283458': [],
+                       u'553587582962253824': [],
+                       u'553587586241794050': [],
+                       u'553587589417304065': [],
+                       u'553587599856906241': [],
+                       u'553587609759666177': []}}
+                       
+
+ALLKEYS2 =[u'553587013409325058',u'553587103922020352',u'553587134838620160',
+           u'553587135274815488',u'553587160088338432',u'553587193772793856',
+           u'553587246516174849',u'553587285074386944',u'553587377835614209',
+           u'553587741720854528',u'553587383397253120',u'553587912949121024',
+           u'553588640052674560',u'553589243583672320',u'553589959937257472',
+           u'553588091433537536',u'553587387889373186',u'553587794686513153',
+           u'553587882741747713',u'553588653562150912',u'553588737750605825',
+           u'553588971864084481',u'553647665695956992',u'553587395942420480',
+           u'553587422445846529',u'553587435511484416',u'553587810859757569',
+           u'553588214859325440',u'553588069610569729',u'553587551131283458',
+           u'553587582962253824',u'553587586241794050',u'553587589417304065',
+           u'553587599856906241',u'553587609759666177']
+                       
+
+THREAD_KEYS2=[u'553587013409325058', u'553587609759666177', u'553587377835614209',
+             u'553587794686513153', u'553587387889373186', u'553647665695956992',
+             u'553588737750605825', u'553587586241794050', u'553587741720854528', 
+             u'553588653562150912', u'553587882741747713', u'553587395942420480', 
+             u'553588971864084481', u'553587589417304065', u'553587422445846529', 
+             u'553587160088338432']
+
+TooDEL2 = [u'553587193772793856', u'553587383397253120', u'553587810859757569', 
+       u'553588069610569729', u'553587135274815488', u'553587435511484416', 
+       u'553587582962253824', u'553589243583672320', u'553587246516174849', 
+       u'553587912949121024', u'553587285074386944', u'553589959937257472', 
+       u'553587103922020352', u'553588640052674560', u'553587551131283458', 
+       u'553588214859325440', u'553587134838620160', u'553588091433537536', 
+       u'553587599856906241']
+Delout2=[u'553587193772793856', u'553587135274815488'] 
+STRUCToutKEYS = [u'553587013409325058',u'553587609759666177',u'553587377835614209',
+                 u'553587741720854528',u'553587387889373186',u'553587794686513153',
+                 u'553647665695956992',u'553588737750605825',u'553587882741747713',
+                 u'553588653562150912',u'553588971864084481',u'553587285074386944',
+                 u'553587435511484416',u'553587810859757569',u'553588214859325440',
+                 u'553588069610569729',u'553587599856906241',u'553587582962253824',
+                 u'553587246516174849',u'553587589417304065',u'553587134838620160',
+                 u'553587586241794050',u'553587103922020352',u'553587395942420480',
+                 u'553587551131283458',u'553587383397253120',u'553588091433537536',
+                 u'553587912949121024',u'553588640052674560',u'553589243583672320',
+                 u'553589959937257472',u'553587422445846529',u'553587160088338432']
+print len(STRUCToutKEYS),len(TooDEL2),len(THREAD_KEYS2)
+# GOOD: No keys in KEYS_2_KEEP where DELETED
+# BAD: KEYS that shoudl have been deleted where not marked with ### 
+NEWstructure2 ={u'553587013409325058': {553587103922020352: [],
+                         553587134838620160 : [],
+                       553587135274815488 : [],#!!
+                       u'553587160088338432': [],
+                       553587193772793856 : [],
+                         553587246516174849 : [],
+                         553587285074386944 : [],###
+                       u'553587377835614209': {u'553587741720854528': []},
+                         553587383397253120 : {  553587912949121024 : {553588640052674560: {553589243583672320: {553589959937257472: []}}},
+                                                 553588091433537536 : []},
+                       u'553587387889373186': {u'553587794686513153': [],
+                                               u'553587882741747713': [],
+                                               u'553588653562150912': [],
+                                               u'553588737750605825': [],
+                                               u'553588971864084481': [],
+                                               u'553647665695956992': []},
+                       u'553587395942420480': [],
+                       u'553587422445846529': [],
+                         553587435511484416 : { 553587810859757569 : { 553588214859325440: []},
+                                                553588069610569729 : []},
+                         553587551131283458 : [],
+                         553587582962253824 : [],
+                       u'553587586241794050': [],
+                       u'553587589417304065': [],
+                         553587599856906241 : [],
+                       u'553587609759666177': []}}
+
+deltest ={1:{10:{100:{110:[],
+                      111:[]}},
+            11:[],
+            20:{200:{220:[],
+                 222:[]}},
+            22:[]}
+        }
+ALLKEYStest =[1,10,100,110,111,11,20,200,220,222,22]
+ID_ORDERtest = [1,10,20,200,222,22]
+ID_ORDERfalse_test =[1,10,111,20,200,222,22]
+
+def key_at_depth(dic, dpt):
+     if dpt > 0:
+         return [key for subdic in dic.itervalues() if isinstance(subdic,dict) 
+                         for key in key_at_depth(subdic, dpt-1) ]
+     else:
+         if isinstance(dic,dict):
+             return dic.keys()
+         else:
+             return []
+
+
+def keys_all_depths(dic):
+    if isinstance(dic,dict):
+        return dic.keys()+[key for subdic in dic.itervalues() 
+                                   if isinstance(subdic,dict) 
+                                       for key in key_any_depth(subdic)]
+    else:
+        return []
+    
+def value_all_depth(dic):
+    if isinstance(dic,dict):    
+        return [v for nested in dic.itervalues() for v in nested.itervalues()]
+    else:
+        return 
+    
+#def dict_subset(dic, keys2keep,deleted=None,kept=None):
+#    if deleted == None:
+#        deleted = []
+#    if kept == None:
+#        kept = []
+#    keys2del = set(dic.keys())-set(keys2keep)
+#    print "\tKEYS_2_DEL",keys2del
+#    print "\tDIC.KEYS",dic.keys()
+#    print "\tKEYS_2_KEEP",keys2keep,"\n"
+#    for k,v in dic.items():
+#        print len(k)
+#        if k in keys2del:
+#            del dic[k]
+#            deleted.append(k)
+#        else:
+#            kept.append(k)
+#            if isinstance(v,dict):
+#                print "RECUR"
+#                dicK,deleted,kept = dict_subset(v,keys2keep,deleted,kept)
+#                dic[k]=dicK
+#            else:
+#                return dic,deleted,kept
+#    return dic,deleted,kept
+
+def dict_subset(dic, keys2keep):
+    keys2del = set(dic.keys())-set(keys2keep)
+#    print "\tKEYS_2_DEL",keys2del
+#    print "\tDIC.KEYS",dic.keys()
+#    print "\tKEYS_2_KEEP",keys2keep,"\n"
+    for k,v in dic.items():
+        print len(k)
+        if k in keys2del:
+            print "del",k
+            del dic[k]
+        else:
+            if isinstance(v,dict):
+                print "RECUR"
+                dicK = dict_subset(v,keys2keep)
+                dic[k]=dicK
+            else:
+                return dic
+    return dic
+
+
+def dict_subset(dic, keys2keep):
+    if isinstance(dic,dict):
+        return {k:v for k,v in dic.items() if k in keys2keep}.update(
+                {key:value for key, subdic in dic.items() 
+                                for value in dict_subset(subdic,keys2keep)})
+    else:
+        return []
+#new_structure,deleted_keys,kept_keys = dict_subset(deltest, ID_ORDERtest)
+#print "TEST",set(kept_keys) == set(ID_ORDERtest)
+#
+#new_structure,deleted_keys,kept_keys = dict_subset(deltest, ID_ORDERfalse_test)
+#print "TESTfalse",set(kept_keys) == set(ID_ORDERfalse_test)
+#
+#new_structure,deleted_keys,kept_keys = dict_subset(structure, ID_ORDER)
+#print "STRUCT1",set(kept_keys) == set(ID_ORDER)
+#print deleted_keys
+
+#new_structure,deleted_keys,kept_keys = dict_subset(structure2, ID_ORDER2)
+#print "STRUCT2",set(kept_keys) == set(ID_ORDER2)
+#print len(kept_keys),len(ID_ORDER2)
+#print deleted_keys,"\n"
+##print "STRUCT_2_NEW",pp.pprint(new_structure),"\n\n"
+##print "STRUCT2",pp.pprint(structure2)
+
+#print set(ALLKEYS2)-set(THREAD_KEYS2)
+
+#new_structure = dict_subset(structure2, THREAD_KEYS2)
+#print "STRUCT2true",set(STRUCToutKEYS) == set(THREAD_KEYS2)
+##print len(kept_keys),len(THREAD_KEYS2)
+#print len(STRUCToutKEYS),len(THREAD_KEYS2)
+#print deleted_keys,"\n"
+
+#print value_all_depth(structure2)
+keys_in = keys_all_depths(structure2)
+print keys_in
+new_structure = dict_subset(structure2, THREAD_KEYS2)
+keys_out = keys_all_depths(new_structure)
+#keys_out = new_structure
+print "KEYS_OUT vs THEAD",set(keys_out)==set(THREAD_KEYS2),len(keys_out),len(THREAD_KEYS2)
+#print set(keys_out)==set(ALLKEYS2)
+#print set(keys_in)-set(keys_out)
+#print "KEYS_NOT_COLLECTED",set(ALLKEYS2) - set(keys_out)
+
+pp.pprint(new_structure)
+
 
