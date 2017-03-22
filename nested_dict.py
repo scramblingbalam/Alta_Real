@@ -5,7 +5,7 @@ Created on Wed Mar 22 12:51:10 2017
 @author: scram
 """
 
-def keys_all_depths(dic):
+def all_keys(dic):
     """
     TODO:
         Test against all types 
@@ -18,9 +18,22 @@ def keys_all_depths(dic):
     else:
         return []
 
-def dict_key_subset(dic, keys2keep):
+def subset_by_key(dic, keys2keep):
     """
     TODO:
+        Test against all types 
+        handle python recursion limit
+    """
+    return {k:dict_subset(v, keys2keep) 
+            if isinstance(v,dict) else v 
+                for k,v in dic.items() 
+                    if k in keys2keep} 
+    
+
+def subset_of_keys(dic, keys2keep):
+    """
+    TODO:
+        negative_sets iie. all keys but
         Test against all types 
         handle python recursion limit
     """
@@ -32,16 +45,7 @@ def dict_key_subset(dic, keys2keep):
         return dic
     
 
-def dict_subset(dic, keys2keep):
-    """
-    TODO:
-        Test against all types 
-        handle python recursion limit
-    """
-    return {k:dict_subset(v, keys2keep) 
-            if isinstance(v,dict) else v 
-                for k,v in dic.items() 
-                    if k in keys2keep} 
+
 
 def key_at_depth(dic, dpt):
     """ From koffein
