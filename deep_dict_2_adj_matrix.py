@@ -71,7 +71,8 @@ def dic_2_adj_mat(Dic):
     return adj_mat, id_dic
 
 def dic_2_node_lists(Dic):
-    out = walk(Dic)[-1]
+    out = walk(Dic)[0]
+    print out
     unique_out =[]
     out_set = set()
     for i in out:
@@ -83,3 +84,4 @@ def dic_2_node_lists(Dic):
             for parent,child in 
                 zip(out[::2],out[1::2])]))
     return np.array(walk_out), id_dic
+
