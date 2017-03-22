@@ -10,6 +10,8 @@ import pprint
 import nested_dict
 pp = pprint.PrettyPrinter(indent=0)
 
+
+
 def flatten(listOfLists):
     "Flatten one level of nesting"
     return it.chain.from_iterable(listOfLists)
@@ -21,10 +23,11 @@ def walk(dic):
         Test against all types 
         handle python recursion limit
     """
+    print "\n",dic
     if isinstance(dic,dict):
         return [(key,subkey) for key,subdic in dic.items() 
                                    if isinstance(subdic,dict) 
-                                       for subkey in nested_dict.all_keys(subdic)]
+                                       for subkey in walk(subdic)]
     else:
         return dic
 
@@ -56,7 +59,6 @@ def dic_2_node_lists(edge_list):
             out_set.add(i)   
     id_dic = {ID:num for num,ID in enumerate(unique_out)}
     return np.array(walk_out), id_dic
-
 
 
 
@@ -129,7 +131,7 @@ al=[(u'525023025792835585',u'525023379481313281'),
 
 
 
-{u'500347114975944705': {u'500347712764518400': [],
+D3 = {u'500347114975944705': {u'500347712764518400': [],
                        u'500347833774374912': {u'500350502690115584': [],
                                               u'500382101930143745': {u'500382921476145152': []}},
                        u'500348365746737152': {u'500366747506335744': {u'500367139652784128': {u'500367482679746560': {u'500368570724155392': {u'500479738964901889': [],
@@ -290,7 +292,3 @@ print set(al) == set(OUT)
 pp.pprint(OUT)
 #adj_list_keys = [key for tup in al for key in tup]
 #print "KEYS sets 1", set(OUTkeys) == set(adj_list_keys)
-OUTbreak = walk(structure_break0)
-print set(OUTbreak) == set(adjlist_break0)
-print np.array(OUT).shape
-print OUTbreak
