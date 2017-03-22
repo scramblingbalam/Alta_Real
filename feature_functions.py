@@ -262,6 +262,7 @@ NEWstructure2 ={u'553587013409325058': {553587103922020352: [],
                          553587599856906241 : [],
                        u'553587609759666177': []}}
 
+
 deltest ={1:{10:{100:{110:[],
                       111:[]}},
             11:[],
@@ -288,7 +289,7 @@ def keys_all_depths(dic):
     if isinstance(dic,dict):
         return dic.keys()+[key for subdic in dic.itervalues() 
                                    if isinstance(subdic,dict) 
-                                       for key in key_any_depth(subdic)]
+                                       for key in keys_all_depths(subdic)]
     else:
         return []
     
@@ -297,94 +298,28 @@ def value_all_depth(dic):
         return [v for nested in dic.itervalues() for v in nested.itervalues()]
     else:
         return 
-    
-#def dict_subset(dic, keys2keep,deleted=None,kept=None):
-#    if deleted == None:
-#        deleted = []
-#    if kept == None:
-#        kept = []
-#    keys2del = set(dic.keys())-set(keys2keep)
-#    print "\tKEYS_2_DEL",keys2del
-#    print "\tDIC.KEYS",dic.keys()
-#    print "\tKEYS_2_KEEP",keys2keep,"\n"
-#    for k,v in dic.items():
-#        print len(k)
-#        if k in keys2del:
-#            del dic[k]
-#            deleted.append(k)
-#        else:
-#            kept.append(k)
-#            if isinstance(v,dict):
-#                print "RECUR"
-#                dicK,deleted,kept = dict_subset(v,keys2keep,deleted,kept)
-#                dic[k]=dicK
-#            else:
-#                return dic,deleted,kept
-#    return dic,deleted,kept
-
-def dict_subset(dic, keys2keep):
-    keys2del = set(dic.keys())-set(keys2keep)
-#    print "\tKEYS_2_DEL",keys2del
-#    print "\tDIC.KEYS",dic.keys()
-#    print "\tKEYS_2_KEEP",keys2keep,"\n"
-    for k,v in dic.items():
-        print len(k)
-        if k in keys2del:
-            print "del",k
-            del dic[k]
-        else:
-            if isinstance(v,dict):
-                print "RECUR"
-                dicK = dict_subset(v,keys2keep)
-                dic[k]=dicK
-            else:
-                return dic
-    return dic
 
 
-def dict_subset(dic, keys2keep):
+def dict_key_subset(dic, keys2keep):
     if isinstance(dic,dict):
-        return {k:v for k,v in dic.items() if k in keys2keep}.update(
-                {key:value for key, subdic in dic.items() 
-                                for value in dict_subset(subdic,keys2keep)})
+        return dic.keys()+[key for subdic in dic.itervalues() 
+                                   if isinstance(subdic,dict) 
+                                       for key in dict_key_subset(subdic,keys2keep) if key in keys2keep]
     else:
-        return []
-#new_structure,deleted_keys,kept_keys = dict_subset(deltest, ID_ORDERtest)
-#print "TEST",set(kept_keys) == set(ID_ORDERtest)
-#
-#new_structure,deleted_keys,kept_keys = dict_subset(deltest, ID_ORDERfalse_test)
-#print "TESTfalse",set(kept_keys) == set(ID_ORDERfalse_test)
-#
-#new_structure,deleted_keys,kept_keys = dict_subset(structure, ID_ORDER)
-#print "STRUCT1",set(kept_keys) == set(ID_ORDER)
-#print deleted_keys
+        return dic
+    
 
-#new_structure,deleted_keys,kept_keys = dict_subset(structure2, ID_ORDER2)
-#print "STRUCT2",set(kept_keys) == set(ID_ORDER2)
-#print len(kept_keys),len(ID_ORDER2)
-#print deleted_keys,"\n"
-##print "STRUCT_2_NEW",pp.pprint(new_structure),"\n\n"
-##print "STRUCT2",pp.pprint(structure2)
+def dict_subset(dic, keys2keep):
+    return {k:dict_subset(v, keys2keep) 
+            if isinstance(v,dict) else v 
+                for k,v in dic.items() 
+                    if k in keys2keep} 
 
-#print set(ALLKEYS2)-set(THREAD_KEYS2)
 
-#new_structure = dict_subset(structure2, THREAD_KEYS2)
-#print "STRUCT2true",set(STRUCToutKEYS) == set(THREAD_KEYS2)
-##print len(kept_keys),len(THREAD_KEYS2)
-#print len(STRUCToutKEYS),len(THREAD_KEYS2)
-#print deleted_keys,"\n"
-
-#print value_all_depth(structure2)
 keys_in = keys_all_depths(structure2)
-print keys_in
 new_structure = dict_subset(structure2, THREAD_KEYS2)
 keys_out = keys_all_depths(new_structure)
-#keys_out = new_structure
+keys_out1 = dict_key_subset(structure2, THREAD_KEYS2)
+print set(keys_out1)==set(THREAD_KEYS2)
 print "KEYS_OUT vs THEAD",set(keys_out)==set(THREAD_KEYS2),len(keys_out),len(THREAD_KEYS2)
-#print set(keys_out)==set(ALLKEYS2)
-#print set(keys_in)-set(keys_out)
-#print "KEYS_NOT_COLLECTED",set(ALLKEYS2) - set(keys_out)
-
-pp.pprint(new_structure)
-
-
+print set(TooDEL2)==set(keys_in)-set(keys_out)
