@@ -15,7 +15,7 @@ def flatten(listOfLists):
     return it.chain.from_iterable(listOfLists)
 
     
-def to_edge_list(dic):
+def walk(dic):
     """
     TODO:
         Test against all types 
@@ -24,10 +24,11 @@ def to_edge_list(dic):
     if isinstance(dic,dict):
         return [(key,subkey) for key,subdic in dic.items() 
                                    if isinstance(subdic,dict) 
-                                       for subkey in keys_all_depths(subdic)]
+                                       for subkey in nested_dict.all_keys(subdic)]
     else:
         return dic
-            
+
+
               
 def dic_2_adj_mat(Dic):
     unique_out =[]
@@ -284,9 +285,12 @@ adjlist_break0 =[(u'553152395371630592',u'553153997226663936'),
 
 OUT = walk(d2) 
 OUTkeys = nested_dict.all_keys(OUT)
+pp.pprint(OUT)
 print set(al) == set(OUT)
+pp.pprint(OUT)
 #adj_list_keys = [key for tup in al for key in tup]
 #print "KEYS sets 1", set(OUTkeys) == set(adj_list_keys)
 OUTbreak = walk(structure_break0)
 print set(OUTbreak) == set(adjlist_break0)
 print np.array(OUT).shape
+print OUTbreak
