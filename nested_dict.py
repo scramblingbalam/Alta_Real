@@ -5,6 +5,8 @@ Created on Wed Mar 22 12:51:10 2017
 @author: scram
 """
 
+
+
 def all_keys(dic):
     """
     TODO:
@@ -14,17 +16,30 @@ def all_keys(dic):
     if isinstance(dic,dict):
         return dic.keys()+[key for subdic in dic.itervalues() 
                                    if isinstance(subdic,dict) 
-                                       for key in keys_all_depths(subdic)]
+                                       for key in all_keys(subdic)]
     else:
         return []
 
+def to_edge_list(dic):
+    """
+    TODO:
+        Test against all types 
+        handle python recursion limit
+    """
+    if isinstance(dic,dict):
+        return [(key,subkey) for key,subdic in dic.items() 
+                                   if isinstance(subdic,dict) 
+                                       for subkey in all_keys(subdic)]
+    else:
+        return dic
+    
 def subset_by_key(dic, keys2keep):
     """
     TODO:
         Test against all types 
         handle python recursion limit
     """
-    return {k:dict_subset(v, keys2keep) 
+    return {k:subset_by_key(v, keys2keep) 
             if isinstance(v,dict) else v 
                 for k,v in dic.items() 
                     if k in keys2keep} 
@@ -40,7 +55,7 @@ def subset_of_keys(dic, keys2keep):
     if isinstance(dic,dict):
         return dic.keys()+[key for subdic in dic.itervalues() 
                                    if isinstance(subdic,dict) 
-                                       for key in dict_key_subset(subdic,keys2keep) if key in keys2keep]
+                                       for key in subset_of_keys(subdic,keys2keep) if key in keys2keep]
     else:
         return dic
     
@@ -51,14 +66,14 @@ def key_at_depth(dic, dpt):
     """ From koffein
         http://stackoverflow.com/questions/20425886/python-how-do-i-get-a-list-of-all-keys-in-a-dictionary-of-dictionaries-at-a-gi
     """
-     if dpt > 0:
-         return [key for subdic in dic.itervalues() if isinstance(subdic,dict) 
+    if dpt > 0:
+        return [key for subdic in dic.itervalues() if isinstance(subdic,dict) 
                          for key in key_at_depth(subdic, dpt-1) ]
-     else:
-         if isinstance(dic,dict):
-             return dic.keys()
-         else:
-             return []
+    else:
+        if isinstance(dic,dict):
+            return dic.keys()
+        else:
+            return []
 
 
 
