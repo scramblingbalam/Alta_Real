@@ -20,15 +20,13 @@ import networkx as nx
 import numpy as np
 import itertools as it
 import pprint
-import deep_dict_2_adj_matrix as dic2mat
 import collections as coll
 import re
+import feature_functions as feature
+import nested_dict
 pp = pprint.PrettyPrinter(indent=0)
 
 
-doc2vec_dir ="Data/doc2vec/"
-model = models.Doc2Vec.load(doc2vec_dir+token_type+'rumorEval_doc2vec_set'+dims+'.model')
-print model.most_similar('black'),"\n"
 
 train_dir = "Data\\semeval2017-task8-dataset"
 train_dic_dir = "traindev"
@@ -63,7 +61,8 @@ ferg_6_path = "\\".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguso
 ferg_7_path = "\\".join([train_dir,train_data_dir,rumor_dirs["ferguson"],ferguson_7])
 
 top_path = "\\".join([train_dir,train_data_dir])
-top_path = ferg_2_path 
+#top_path = ferg_2_path 
+#top_path = "\\".join([train_dir,train_data_dir,rumor_dirs["charlie_hebdo"]])
 
 id_text_dic = {}
 text_list = []
@@ -78,56 +77,23 @@ doc2vec_dir ="Data\\doc2vec\\"
 ids_around_IDless_tweets=[136,139,1085,1087]
 
 
-def pos_extract(path):
-    pos_tweets = []
-    with open(path,"r")as POSfile:
-        pos_tweets = [json.loads(twt) for twt in POSfile.readlines()]
-    #create set of all used POS tags
-    pos_tag_set = set([pos['category'] for twt in pos_tweets for pos in twt[u'entities'][u'Token']])
-
-    #create dictionary of POS_Tags and vector indicies
-    pos_index_dic = {pos:num for num,pos in enumerate(pos_tag_set)}
-    #create inverse lookup dictionary
-    i_p_dic = {num:pos for num,pos in enumerate(pos_tag_set)}
-    # create dictionary of POS tag lists for keyed by ID
-    dic = {twt['id']:twt[u'entities'][u'Token'] for twt in pos_tweets if 'id' in twt}
-    id_p_dic ={}
-    for K,V in dic.items():
-        vector = []
-        for v in V:
-            vector.append(pos_index_dic[v['category']])
-        id_p_dic[K]=vector
-    id_p_dic = {K:[pos_index_dic[v['category']] for v in V] for K,V in dic.items()}
-    return id_p_dic, i_p_dic
-
-
-
-
-#text_list = []
-#with open(doc2vec_dir+token_type+"text_list.json","r") as picfile:
-#    text_list = json.load(picfile)    
-#    
-#id_list = []
-#with open(doc2vec_dir+"id_list.json","rb") as picfile:
-#    id_list = json.load(picfile)
-#id_dic = {ID:i for i,ID in enumerate(id_list)}
-#
-#fail_id_list =[]
-#structure = {}
-#
-#current_event = ""
-#current_line_dic = {}
-#lang_event_csv = []
-#lang_list=[]
 #non_english_event =[]
 
 pos_file_path =POS_dir+"corpus_twitIE_POS"
-id_pos_dic, index_pos_dic = pos_extract(pos_file_path)
+id_pos_dic, index_pos_dic = feature.pos_extract(pos_file_path)
+
+
 swear_path = "Data\\badwords.txt"
 swear_list=[]
 with open(swear_path,"r")as swearfile:
     swear_list = swearfile.readlines()
-    
+
+
+id_text_dic ={}
+with open(doc2vec_dir+token_type+"id_text_dic.json",'r')as textDicFile:
+    id_text_dic = json.load(textDicFile)
+
+
 negationwords = ['not', 'no', 'nobody', 'nothing', 'none', 
                  'never', 'neither', 'nor', 'nowhere', 'hardly', 
                  'scarcely', 'barely', 'don*', 'isn*', 'wasn*', 
@@ -135,120 +101,124 @@ negationwords = ['not', 'no', 'nobody', 'nothing', 'none',
                  'don', 'isn', 'wasn', 'nothin',
                  'shouldn', 'wouldn', 'couldn', 'doesn']
 
-id_text_dic ={}
-with open(doc2vec_dir+token_type+"id_text_dic.json",'r')as textDicFile:
-    id_text_dic = json.load(textDicFile)
-
-
-def word_bool(text,word_list,cont="*"):
-    if cont:
-        word_list = [string.replace("\n","") for string in word_list]
-        word_list = [s.replace(cont,"")+" " if s[-1] != "*" else s for s in word_list]
-        word_list = [" "+s.replace(cont,"") if s[0] != "*" else s for s in word_list]
-    
-    bad_list= [swear for swear in word_list if swear in text]
-    return bool(bad_list)
-        
-def word_char_count(text):
-    return len(text.split()),len(text)
-#for i,i1,i2 in zip(swear_list,swear_list1,swear_list2):
-#        print i,i1,i2
-#    swear_list = swearfile.readlines()
-
-def zub_capital_ratio(text):
-    alpha_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '', text )))
-    return float(sum([char.isupper() for char in alpha_text]))/float(len(alpha_text))
-
-def punc_binary_gen(text,puncs):
-    for punc in puncs:
-        yield int(np.array([char==punc for char in text]).any())
-        
-def entitiy_binary_gen(tweet_dic,key_list):
-    """ Takes a tweets json dic and a list of keys from the entities attribute
-        possible keys are
-        [u'user_mentions', u'media', u'hashtags', u'symbols', u'trends', u'urls']
-    """
-    for key in key_list:
-        if key in tweet_dic['entities']:
-            yield int(bool(tweet_dic['entities'][key]))
-        else:
-            yield int(False)
-
-def dic_path_recurse(dic, path):
-    key = path.pop(0)
-    try:
-        out = dic[key]
-        if out and isinstance(out,dict):
-            return dic_path_recurse(out,path)
-        else:
-            return out
-    except:
-        return False
-    
-def attribute_binary_gen(tweet_dic,path_list):
-    """ Takes a tweets json dic and a list of keys from the entities attribute
-            possible top level keys:
-        [u'favorited', u'retweet_count', u'in_reply_to_user_id', u'contributors', 
-        u'truncated', u'retweeted', u'in_reply_to_status_id_str', u'coordinates',
-        u'filter_level', u'in_reply_to_status_id', u'place', u'favorite_count',
-        u'extended_entities', u'in_reply_to_screen_name', u'metadata', u'geo', 
-        u'in_reply_to_user_id_str', u'possibly_sensitive', u'possibly_sensitive_appealable']
-        Note: [u'filter_level', u'extended_entities', u'metadata'] can be absent
-            possible keys are for 'entity'
-        [u'user_mentions', u'media', u'hashtags', u'symbols', u'trends', u'urls']
-        Note: [u'media'] can be absent and recursion raises exception & returns False
-    """
-    for path in path_list:
-            yield int(bool(dic_path_recurse(tweet_dic, path)))
-
-
-
 punc_list = [u"?",u"!",u"."]
 attribute_paths = [[u'entities',u'media'],
                    [u'entities',u'urls'],
                    [u'in_reply_to_screen_name']]
 
-attribute_set =set()
+doc2vec_dir ="Data/doc2vec/"
+model = models.Doc2Vec.load(doc2vec_dir+token_type+'rumorEval_doc2vec_set'+dims+'.model')
+print model.most_similar('black'),"\n"
+print model["black"]
+
+
+#structure ={"553548567420628992":{"553549149787140096":{"553550408346779648":{"553551840428949504":{"553552036915335169":{"553553247953514496":{"553553754424115200":{"553554620229115905":{"553555066754695168":{"553555725084270593":[]}}}}},"553552100417110017":[]}}},"553551001077424128":[],"553552287889494017":[],"553552395704082432":[],"553552625724301314":[],"553553255255781376":[],"553554289835376643":[],"553559162018611201":{"553560292635189248":{"553561410920521729":{"553562623200210944":{"553565149790224387":[]}}}},"553559527216656385":[]}}
+#
+#adj_list,id_dic = dic2mat.dic_2_node_lists(structure)
+#
+#print "KeyError: u'552790281276628992'"
+#print structure.keys(),"\n"
+#pp.pprint(structure) 
+graph_root_id = ""
+graph_event = ""
+graph_size = 0
+graph_2_vis =[]
+
+thread_dic = {}
+
+root_id = 0
+event_model_dic = {}
 for current_dir in walk:
     adj_mat = np.array([])
+#    print "\nEVENT",event
+#    print "CURRENT_DIR",current_dir
     if 'structure.json' in current_dir[-1]:
-        en_id = []
-#        if adj_mat.any():
-#            G = nx.from_numpy_matrix(np.array(adj_mat)) 
-#            nx.draw(G, with_labels=True)
-        root_id = long(current_dir[0].split("\\")[-1])
-#        print root_id, "root",root_id in id_list
-        with open(current_dir[0]+"\\"+'structure.json',"r")as jsonfile:
-                structure = json.load(jsonfile)
-                adj_mat,id_dic  = dic2mat.dic_2_adj_mat(structure)
-                # pp.pprint(structure)
-                id_set =set(k for k,v in id_dic.items())
+#        print current_dir[0].split("\\")[-2]
+        event = current_dir[0].split("\\")[-2]
+#        print "##############\n",event
+##        if adj_mat.any():
+##            G = nx.from_numpy_matrix(np.array(adj_mat)) 
+##            nx.draw(G, with_labels=True)
     last_dir = current_dir[0].split("\\")[-1]
-    if last_dir == "source-tweet" or last_dir == "replies":
-#        print id_set
+    if last_dir == "replies":
+        feature_vector =[]
+        json_list =[]
+        rep_path =current_dir[0]
+#        print "REPLIES_DIR",rep_path ,"\n"
+        root_path = rep_path.split("\\")
+#        print root_path
+        with open("\\".join(root_path[:-1])+"\\"+'structure.json',"r")as jsonfile:
+#            print structure
+            structure = json.load(jsonfile)
+
+        source_path = root_path
+        source_path[-1]="source-tweet"
+        source_path = "\\".join(source_path)
+#        print list(os.listdir(source_path))
+        root_id =os.listdir(source_path)[0]
+        with open(source_path+"\\"+root_id,"r")as jsonfile:
+            json_list.append(json.load(jsonfile))
         for json_path in current_dir[-1]:
-#            print "#########\n",current_dir[0],json_path,"######\n"
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
-                filedic = json.load(jsonfile)
-                text =filedic['text']
-                ID = filedic['id_str']
-                print "\n",text
-                format_binary_vec = list(attribute_binary_gen(filedic, attribute_paths))
-                punc_vec = list(punc_binary_gen(text,punc_list))
-                if token_type == "zub_":
-                    cap_ratio = zub_capital_ratio(text)
-                elif token_type == "twit_":
-                    print "ERROR write a better captial ratio function"
-                    break                  
-                word_count,char_count = word_char_count(id_text_dic[ID])
-                swear_bool = word_bool(text,swear_list)
-                neg_bool = word_bool(text,negationwords)
-                pos_vec = id_pos_dic[filedic["id"]],"\n"
+                json_list.append(json.load(jsonfile))
+        for filedic in json_list:
+            text =filedic['text']
+            ID = filedic['id_str']
+            attribute_paths = [[u'entities',u'media'],
+                               [u'entities',u'urls'],
+                               [u'in_reply_to_screen_name']]
+            format_binary_vec = list(feature.attribute_binary_gen(filedic, attribute_paths))
+            feature_vector += format_binary_vec
+            punc_vec = list(feature.punc_binary_gen(text,punc_list))
+            feature_vector += punc_vec
+            if token_type == "zub_":
+                cap_ratio = feature.zub_capital_ratio(text)
+            elif token_type == "twit_":
+                print "ERROR write a better captial ratio function"
+                break
+            feature_vector += cap_ratio
+            word_char_count = feature.word_char_count(id_text_dic[ID])
+            feature_vector += word_char_count
+            swear_bool = feature.word_bool(text,swear_list)
+            feature_vector += swear_bool
+            neg_bool = feature.word_bool(text,negationwords)
+            feature_vector += neg_bool
+            pos_vec = id_pos_dic[filedic["id"]]
+            feature_vector += feature.pos_vector(pos_vec)
+            thread_dic[ID] = feature_vector
+        structure = nested_dict.subset_by_key(structure, thread_dic.keys())
+        size = len(nested_dict.all_keys(structure))
+        edge_list = np.array(nested_dict.to_edge_list(structure))
+        if 103>size>graph_size:
+            graph_2_vis = edge_list
+            graph_size = size
+            graph_event = event
+            graph_root_id =root_id
+        id_dic = feature.id_index_dic(edge_list)
+        
+        id_order = [i[0] for i in sorted(id_dic.items(),
+                                            key=lambda (k,v):(v,k))]
+#        pp.pprint(structure)
+
+        feats = [np.array([thread_dic[i] for i in id_order])]
+        if event in event_model_dic:
+            event_model_dic[event] += feats
+        else:
+            event_model_dic[event] = feats
+        
+        thread_dic = {}
 
 
+print type(event_model_dic['ebola-essien'])
+with open("event_model_dic","w")as modelfile:
+    pickle.dump(event_model_dic,modelfile)
 
-#print swear_list
-#
-#print coll.Counter(non_english_event)
-#print coll.Counter(lang_list)
-#                
+print graph_size
+print graph_event, graph_root_id
+print graph_2_vis 
+DG=nx.DiGraph()
+DG.add_edges_from(graph_2_vis)
+nx.draw(DG, with_labels=False)
+
+#nx.draw_graphviz(DG)
+#plt.show()
