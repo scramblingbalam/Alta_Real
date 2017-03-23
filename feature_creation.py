@@ -240,8 +240,8 @@ for current_dir in walk:
                 event_target_dic[event] = thread_target_vector
    
 #        pp.pprint(structure)
-
-        feats = [np.array(edge_list+[thread_dic[i] for i in id_order])]
+        edge_vector = [np.array([np.array([id_dic[Id] for Id in edge]) for edge in edge_list])]
+        feats = [np.array(edge_vector+[thread_dic[i] for i in id_order])]
         if event in event_model_dic:
             event_model_dic[event] += feats
         else:
