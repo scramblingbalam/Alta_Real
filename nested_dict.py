@@ -26,10 +26,10 @@ def to_edge_list(dic):
         Test against all types 
         handle python recursion limit
     """
+#    print "\n",dic
     if isinstance(dic,dict):
-        return [(key,subkey) for key,subdic in dic.items() 
-                                   if isinstance(subdic,dict) 
-                                       for subkey in all_keys(subdic)]
+        return [(k,i) for k,v in dic.items() for i in v]+[ 
+               tup for subdic in dic.itervalues() for tup in to_edge_list(subdic)]
     else:
         return dic
     
