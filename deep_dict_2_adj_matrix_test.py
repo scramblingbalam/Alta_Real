@@ -16,6 +16,41 @@ def flatten(listOfLists):
     "Flatten one level of nesting"
     return it.chain.from_iterable(listOfLists)
 
+
+def old_walk(dic, parent=None, mem_set = None, adj=None):
+    if not isinstance(dic,dict):
+        return adj
+    else:
+        if parent is None and mem_set is None:
+            mem_set = set()
+            for k,v in dic.items():
+                if v:
+                    parent = k
+                    return old_walk(v,parent,mem_set)
+                else:
+                    pass
+        elif adj is None:
+            adj = []
+            for k,v in dic.items():
+                edge = (parent,k)
+                if edge not in mem_set:
+                    adj.append(edge)
+                mem_set.add(edge)
+            for k,v in dic.items():
+                if isinstance(v,dict):
+                    adj = old_walk(v,k,mem_set,adj)
+            return adj
+        else:
+            for k,v in dic.items():
+                edge = (parent,k)
+                if edge not in mem_set:
+                    adj.append(edge)
+                mem_set.add(edge)
+            out =[list(flatten(old_walk(v,k,mem_set,adj))) for k,v in dic.items()][-1]
+            walk_out = list(set([(parent,child) 
+            for parent,child in 
+                zip(out[::2],out[1::2])]))
+            return walk_out
     
 def walk(dic):
     """
@@ -204,6 +239,7 @@ u'2817': {u'0897': []}}
 
 
 
+
 #al3={u'500347114975944705': {u'500347712764518400': [],
 #                             u'500347833774374912': {u'500350502690115584': [],
 #                                                     u'500382101930143745': {u'500382921476145152': []}},
@@ -285,10 +321,63 @@ adjlist_break0 =[(u'553152395371630592',u'553153997226663936'),
                 (u'553152395371630592',u'553226339743186944'),
                 (u'553152395371630592',u'553255878628237313')]
 
-OUT = walk(d2) 
-OUTkeys = nested_dict.all_keys(OUT)
-pp.pprint(OUT)
-print set(al) == set(OUT)
-pp.pprint(OUT)
+test_dic ={1:{10:{100:{110:[],
+                      111:[]}},
+            11:[],
+            20:{200:{220:[],
+                 222:[]}},
+            22:[]}
+        }
+            
+test_edges=[(1,10),
+            (10,100),
+            (100,110),
+            (100,111),
+            (1,11),
+            (1,20),
+            (20,200),
+            (200,220),
+            (200,222),
+            (1,22)]
+
+ALLKEYStest =[1,10,100,110,111,11,20,200,220,222,22]
+ID_ORDERtest = [1,10,20,200,222,22]
+ID_ORDERfalse_test =[1,10,111,20,200,222,22]
+
+def walk(dic):
+    """
+    TODO:
+        Test against all types 
+        handle python recursion limit
+    """
+#    print "\n",dic
+    if isinstance(dic,dict):
+        return [(k,i) for k,v in dic.items() for i in v]+[ 
+               tup for subdic in dic.itervalues() for tup in walk(subdic)]
+    else:
+        return dic
+
+testOUT = old_walk(test_dic) 
+#OUTkeys = nested_dict.all_keys(OUT)
+pp.pprint(testOUT)
+print "\n",set(test_edges) == set(testOUT)
+#pp.pprint(testOUT)
+
+
+testOUT2 = walk(test_dic) 
+#OUTkeys = nested_dict.all_keys(OUT)
+type(testOUT2)
+pp.pprint(testOUT2)
+print "\n",set(test_edges) == set(testOUT2)
+#pp.pprint(testOUT)
+
+
+for k,v in D3.items():
+    print k
+#    for i in v:
+#        print k,i
+        
+for tup in [(k,i) for k,v in test_dic.items() for i in v]:
+    print tup
 #adj_list_keys = [key for tup in al for key in tup]
 #print "KEYS sets 1", set(OUTkeys) == set(adj_list_keys)
