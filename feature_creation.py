@@ -128,6 +128,32 @@ thread_dic = {}
 
 root_id = 0
 event_model_dic = {}
+
+def translatelabel(label):
+    if label == u'deny':
+        return 0
+    if label == u'support':
+        return 1
+    if label == u'query':
+        return 2
+    if label == 'comment':
+        return 3
+
+id_target_dic = {}
+
+train_dir 
+train_dic_dir 
+dev = "rumoureval-subtaskA-dev.json"
+train = "rumoureval-subtaskA-train.json"
+target_path = "\\".join([train_dir,train_dic_dir,train])
+with open(target_path,"r")as targetfile:
+    id_target_dic = json.load(targetfile) 
+    
+label_list =[]
+
+event_target_dic = {}  
+unlabeled_thread_list=[]
+thread_list=[]
 for current_dir in walk:
     adj_mat = np.array([])
 #    print "\nEVENT",event
@@ -156,14 +182,20 @@ for current_dir in walk:
         source_path = "\\".join(source_path)
 #        print list(os.listdir(source_path))
         root_id =os.listdir(source_path)[0]
+#        if root_id.split(".")[0] in id_target_dic.keys():
         with open(source_path+"\\"+root_id,"r")as jsonfile:
             json_list.append(json.load(jsonfile))
         for json_path in current_dir[-1]:
             with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                 json_list.append(json.load(jsonfile))
+#        print "\n", root_id
         for filedic in json_list:
             text =filedic['text']
             ID = filedic['id_str']
+            thread_list.append(event)
+            if event != "germanwings-crash":
+                label_list.append(id_target_dic[ID])               
+#                print id_target_dic[root_id.split(".")[0]]
             attribute_paths = [[u'entities',u'media'],
                                [u'entities',u'urls'],
                                [u'in_reply_to_screen_name']]
@@ -188,19 +220,28 @@ for current_dir in walk:
             thread_dic[ID] = feature_vector
         structure = nested_dict.subset_by_key(structure, thread_dic.keys())
         size = len(nested_dict.all_keys(structure))
-        edge_list = np.array(nested_dict.to_edge_list(structure))
-        if 103>size>graph_size:
+        edge_list = nested_dict.to_edge_list(structure)
+        if 60>size>graph_size:
             graph_2_vis = edge_list
             graph_size = size
             graph_event = event
             graph_root_id =root_id
+            
         id_dic = feature.id_index_dic(edge_list)
-        
         id_order = [i[0] for i in sorted(id_dic.items(),
                                             key=lambda (k,v):(v,k))]
+        # create an array for each thread an append to the event_target_dic        
+        if event != "germanwings-crash":
+            thread_target_vector = [np.array(map(translatelabel, 
+                                                [id_target_dic[i] for i in id_order]))]
+            if event in event_model_dic:
+                event_target_dic[event] += thread_target_vector
+            else:
+                event_target_dic[event] = thread_target_vector
+   
 #        pp.pprint(structure)
 
-        feats = [np.array([thread_dic[i] for i in id_order])]
+        feats = [np.array(edge_list+[thread_dic[i] for i in id_order])]
         if event in event_model_dic:
             event_model_dic[event] += feats
         else:
@@ -213,12 +254,21 @@ print type(event_model_dic['ebola-essien'])
 with open("event_model_dic","w")as modelfile:
     pickle.dump(event_model_dic,modelfile)
 
+with open("event_target_dic","w")as modelfile:
+    pickle.dump(event_target_dic,modelfile)
+
 print graph_size
 print graph_event, graph_root_id
 print graph_2_vis 
 DG=nx.DiGraph()
 DG.add_edges_from(graph_2_vis)
-nx.draw(DG, with_labels=False)
+nx.draw_random(DG, with_labels=False)
+#nx.draw_spectral(DG, with_labels=False)
+#pos=nx.graphviz_layout(G, prog='dot')
+#nx.draw(G, pos, with_labels=False, arrows=False)
+
 
 #nx.draw_graphviz(DG)
 #plt.show()
+#label_count = coll.Counter(label_list)
+#print label_count
