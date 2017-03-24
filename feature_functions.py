@@ -15,6 +15,8 @@ import itertools as it
 import pprint
 pp = pprint.PrettyPrinter(indent=0)
 
+def mean_W2V_vector(text,model):
+    return np.mean(np.vstack([model[word] for word in text.split()]),0)
 
 def pos_extract(path):
     pos_tweets = []

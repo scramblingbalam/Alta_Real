@@ -16,6 +16,7 @@ import gensim
 #import re
 import cPickle as pickle
 import sys
+import json
 # Open the file (make sure its in the same directory as this file)
         
 
@@ -27,10 +28,18 @@ else:
     dims = 300
 
 
-
+LabeledSentence = gensim.models.doc2vec.LabeledSentence
 doc2vec_dir ="Data/doc2vec/"
 
 token_type = "zub_"
+#sentences = []
+#with open(doc2vec_dir+token_type+"doc2vec_train_corpus.txt",'r')as corpfile:
+#    sentences=[sent.split() for sent in corpfile.readlines()]
+
+
+with open(doc2vec_dir+token_type+"id_text_dic.json",'r')as corpfile:
+    sent_dic = json.load(corpfile)
+sentences = [LabeledSentence(v.split(),[str(k)]) for k,v in sent_dic.items()]
 sentences = models.doc2vec.TaggedLineDocument(doc2vec_dir+token_type+"doc2vec_train_corpus.txt")#yelp_data_small(words="sent_doc2vec", labels="label_doc2vec")
 model_zub = models.Doc2Vec(sentences, size=dims, window=8, min_count=0, workers=4)
 dims = str(dims)
@@ -39,17 +48,27 @@ model_zub.init_sims(replace=True)
 model_zub.save(doc2vec_dir+token_type+"rumorEval_doc2vec_set"+dims+".model")
 
 
-dims =int(dims)
-token_type = "twit_"
-sentences = models.doc2vec.TaggedLineDocument(doc2vec_dir+token_type+"doc2vec_train_corpus.txt")#yelp_data_small(words="sent_doc2vec", labels="label_doc2vec")
-model_twit = models.Doc2Vec(sentences, size=dims, window=8, min_count=0, workers=4)
-dims = str(dims)
-model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec"+dims+".model")
-model_twit.init_sims(replace=True)
-model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec10k_set"+dims+".model")
+#dims =int(dims)
+#token_type = "twit_"
+#sentences = []
+#with open(doc2vec_dir+token_type+"doc2vec_train_corpus.txt",'r')as corpfile:
+#    sentences=[sent.split() for sent in corpfile.readlines()]
+##sentences = models.doc2vec.TaggedLineDocument(doc2vec_dir+token_type+"doc2vec_train_corpus.txt")#yelp_data_small(words="sent_doc2vec", labels="label_doc2vec")
+#model_twit = models.Doc2Vec(sentences, size=dims, window=8, min_count=0, workers=4)
+#dims = str(dims)
+#model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec"+dims+".model")
+#model_twit.init_sims(replace=True)
+#model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec_set"+dims+".model")
 
 print "\n"
 print model_zub.most_similar('black')
+print model_zub.most_similar('13')
 print "\n"
-print model_twit.most_similar('black')
+#print model_twit.most_similar('black')
 
+#for i in sentences[1130]:
+#    print i
+
+#print len(sentences_twit)
+#print sentences_twit[0]
+#print len(sentences_twit)

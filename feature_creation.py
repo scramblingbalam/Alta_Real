@@ -15,6 +15,7 @@ import cPickle as pickle
 #import pickle
 #import twit_token
 import unicodedata as uniD
+
 import nltk
 import networkx as nx
 import numpy as np
@@ -107,18 +108,24 @@ attribute_paths = [[u'entities',u'media'],
                    [u'in_reply_to_screen_name']]
 
 doc2vec_dir ="Data/doc2vec/"
-model = models.Doc2Vec.load(doc2vec_dir+token_type+'rumorEval_doc2vec_set'+dims+'.model')
-print model.most_similar('black'),"\n"
-print model["black"]
+D2Vmodel = models.Doc2Vec.load(doc2vec_dir+token_type+'rumorEval_doc2vec_set'+dims+'.model')
+print D2Vmodel.most_similar('black'),"\n"
+
+doc2vec_id = []
+with open(doc2vec_dir+"id_list.json","r") as picfile:
+    doc2vec_id_key={str(twtID):str(key) for key,twtID in enumerate(json.load(picfile))} 
+
+D2V_id_text_dic ={}
+with open(doc2vec_dir+token_type+"id_text_dic.json", "r")as d2vtextfile:
+    D2V_id_text_dic = json.load(d2vtextfile)
 
 
-#structure ={"553548567420628992":{"553549149787140096":{"553550408346779648":{"553551840428949504":{"553552036915335169":{"553553247953514496":{"553553754424115200":{"553554620229115905":{"553555066754695168":{"553555725084270593":[]}}}}},"553552100417110017":[]}}},"553551001077424128":[],"553552287889494017":[],"553552395704082432":[],"553552625724301314":[],"553553255255781376":[],"553554289835376643":[],"553559162018611201":{"553560292635189248":{"553561410920521729":{"553562623200210944":{"553565149790224387":[]}}}},"553559527216656385":[]}}
-#
-#adj_list,id_dic = dic2mat.dic_2_node_lists(structure)
-#
-#print "KeyError: u'552790281276628992'"
-#print structure.keys(),"\n"
-#pp.pprint(structure) 
+
+print "KeyError: u'552790281276628992'"
+print structure.keys(),"\n"
+pp.pprint(structure) 
+
+
 graph_root_id = ""
 graph_event = ""
 graph_size = 0
@@ -190,6 +197,7 @@ for current_dir in walk:
                 json_list.append(json.load(jsonfile))
 #        print "\n", root_id
         for filedic in json_list:
+            feature_vector =[]
             text =filedic['text']
             ID = filedic['id_str']
             thread_list.append(event)
@@ -217,6 +225,15 @@ for current_dir in walk:
             feature_vector += neg_bool
             pos_vec = id_pos_dic[filedic["id"]]
             feature_vector += feature.pos_vector(pos_vec)
+#            print D2Vmodel[doc2vec_id_key[ID]]
+            d2v_text = D2V_id_text_dic[ID]
+#            print d2v_text
+            mean_word_vector = feature.mean_W2V_vector(d2v_text,D2Vmodel)
+#            print mean_word_vector
+#            print type(mean_word_vector)
+#            print type(feature_vector)
+            feature_vector = np.concatenate((mean_word_vector,np.array(feature_vector)))
+#            print type(feature_vector)
             thread_dic[ID] = feature_vector
         structure = nested_dict.subset_by_key(structure, thread_dic.keys())
         size = len(nested_dict.all_keys(structure))
@@ -250,7 +267,7 @@ for current_dir in walk:
         thread_dic = {}
 
 
-print type(event_model_dic['ebola-essien'])
+
 with open("event_model_dic","w")as modelfile:
     pickle.dump(event_model_dic,modelfile)
 
@@ -263,6 +280,8 @@ print graph_2_vis
 DG=nx.DiGraph()
 DG.add_edges_from(graph_2_vis)
 nx.draw_random(DG, with_labels=False)
+
+
 #nx.draw_spectral(DG, with_labels=False)
 #pos=nx.graphviz_layout(G, prog='dot')
 #nx.draw(G, pos, with_labels=False, arrows=False)
