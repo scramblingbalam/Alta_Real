@@ -11,7 +11,6 @@ import nltk
 import numpy as np
 import re
 import collections as coll
-import itertools as it
 import pprint
 pp = pprint.PrettyPrinter(indent=0)
 
