@@ -121,9 +121,9 @@ with open(doc2vec_dir+token_type+"id_text_dic.json", "r")as d2vtextfile:
 
 
 
-print "KeyError: u'552790281276628992'"
-print structure.keys(),"\n"
-pp.pprint(structure) 
+#print "KeyError: u'552790281276628992'"
+#print structure.keys(),"\n"
+#pp.pprint(structure) 
 
 
 graph_root_id = ""
@@ -232,7 +232,8 @@ for current_dir in walk:
 #            print mean_word_vector
 #            print type(mean_word_vector)
 #            print type(feature_vector)
-            feature_vector = np.concatenate((mean_word_vector,np.array(feature_vector)))
+            feature_vector = np.concatenate((mean_word_vector,
+                                             np.array(feature_vector)))
 #            print type(feature_vector)
             thread_dic[ID] = feature_vector
         structure = nested_dict.subset_by_key(structure, thread_dic.keys())
@@ -250,19 +251,32 @@ for current_dir in walk:
         # create an array for each thread an append to the event_target_dic        
         if event != "germanwings-crash":
             thread_target_vector = [np.array(map(translatelabel, 
-                                                [id_target_dic[i] for i in id_order]))]
+                                                [id_target_dic[i] 
+                                                            for i in id_order]))]
             if event in event_model_dic:
                 event_target_dic[event] += thread_target_vector
             else:
                 event_target_dic[event] = thread_target_vector
    
 #        pp.pprint(structure)
-        edge_vector = [np.array([np.array([id_dic[Id] for Id in edge]) for edge in edge_list])]
-        feats = [np.array(edge_vector+[thread_dic[i] for i in id_order])]
+        edge_vector = np.array([np.array([id_dic[Id] for Id in edge]) 
+                                                        for edge in edge_list])
+#        print edge_vector[0]
+#        print edge_vector[0].shape
+#        np.reshape(edge_vector[0],(edge_vector[0].shape[0],2))
+#        print edge_vector[0]
+#        print edge_vector[0].shape
+        n_feats = np.array([thread_dic[i] for i in id_order])
+#        n_edges = np.array([edge_vector for i in range(n_feats.shape[0])])
+        print n_edges.shape
+        print n_feats.shape
+#        X_feats = np.vstack([n_nodes,n_feats])
+#        X_feats = np.array([n_nodes,n_feats])
+        X_train = [np.array([n_feats,edge_vector])]
         if event in event_model_dic:
-            event_model_dic[event] += feats
+            event_model_dic[event] += X_train
         else:
-            event_model_dic[event] = feats
+            event_model_dic[event] = X_train
         
         thread_dic = {}
 
@@ -274,17 +288,26 @@ with open("event_model_dic","w")as modelfile:
 with open("event_target_dic","w")as modelfile:
     pickle.dump(event_target_dic,modelfile)
 
-print graph_size
-print graph_event, graph_root_id
-print graph_2_vis 
-DG=nx.DiGraph()
-DG.add_edges_from(graph_2_vis)
-nx.draw_random(DG, with_labels=False)
+#print graph_size
+#print graph_event, graph_root_id
+#print graph_2_vis 
+#DG=nx.DiGraph()
+#DG.add_edges_from(graph_2_vis)
+#nx.draw_random(DG, with_labels=False)
 
 
-#nx.draw_spectral(DG, with_labels=False)
-#pos=nx.graphviz_layout(G, prog='dot')
-#nx.draw(G, pos, with_labels=False, arrows=False)
+#from networkx.drawing.nx_agraph import graphviz_layout
+#
+##nx.draw_spectral(DG, with_labels=False)
+##pos=nx.graphviz_layout(DG, prog='dot')
+#pos=graphviz_layout(DG, prog='dot')
+#nx.draw(DG, pos, with_labels=False, arrows=False)
+#from networkx.drawing.nx_pydot import to_pydot
+
+#import pydot_ng as pydot
+##import graphviz
+#Gp = pydot.graph_from_edges(graph_2_vis)
+#Gp.write_png('example1_graph.png')
 
 
 #nx.draw_graphviz(DG)
