@@ -4,8 +4,7 @@ Created on Thu Mar 09 18:07:03 2017
 
 @author: scram
 """
-dims =str(300)
-token_type = "zub_"
+
 from gensim import corpora, models, similarities
 import gensim
 import json
@@ -25,8 +24,15 @@ import collections as coll
 import re
 import feature_functions as feature
 import nested_dict
+from scipy import spatial
 pp = pprint.PrettyPrinter(indent=0)
 
+# Global Variables 
+dims =str(300)
+token_type = "zub"
+embed_type = "word2vec"
+#token_type = "twit"
+#embed_type = "doc2vec"
 
 
 train_dir = "Data\\semeval2017-task8-dataset"
@@ -91,7 +97,7 @@ with open(swear_path,"r")as swearfile:
 
 
 id_text_dic ={}
-with open(doc2vec_dir+token_type+"id_text_dic.json",'r')as textDicFile:
+with open(doc2vec_dir+token_type+"_"+"id_text_dic.json",'r')as textDicFile:
     id_text_dic = json.load(textDicFile)
 
 
@@ -108,7 +114,7 @@ attribute_paths = [[u'entities',u'media'],
                    [u'in_reply_to_screen_name']]
 
 doc2vec_dir ="Data/doc2vec/"
-D2Vmodel = models.Doc2Vec.load(doc2vec_dir+token_type+'rumorEval_doc2vec_set'+dims+'.model')
+D2Vmodel = models.Doc2Vec.load(doc2vec_dir+token_type+"_"+'rumorEval_doc2vec_set'+dims+'.model')
 print D2Vmodel.most_similar('black'),"\n"
 
 doc2vec_id = []
@@ -116,7 +122,7 @@ with open(doc2vec_dir+"id_list.json","r") as picfile:
     doc2vec_id_key={str(twtID):str(key) for key,twtID in enumerate(json.load(picfile))} 
 
 D2V_id_text_dic ={}
-with open(doc2vec_dir+token_type+"id_text_dic.json", "r")as d2vtextfile:
+with open(doc2vec_dir+token_type+"_"+"id_text_dic.json", "r")as d2vtextfile:
     D2V_id_text_dic = json.load(d2vtextfile)
 
 
@@ -159,6 +165,7 @@ with open(target_path,"r")as targetfile:
 label_list =[]
 
 event_target_dic = {}  
+event_ID_dic = {}
 unlabeled_thread_list=[]
 thread_list=[]
 for current_dir in walk:
@@ -174,6 +181,7 @@ for current_dir in walk:
 ##            nx.draw(G, with_labels=True)
     last_dir = current_dir[0].split("\\")[-1]
     if last_dir == "replies":
+        thread_id_list = []
         feature_vector =[]
         json_list =[]
         rep_path =current_dir[0]
@@ -225,16 +233,16 @@ for current_dir in walk:
             feature_vector += neg_bool
             pos_vec = id_pos_dic[filedic["id"]]
             feature_vector += feature.pos_vector(pos_vec)
-#            print D2Vmodel[doc2vec_id_key[ID]]
+            
             d2v_text = D2V_id_text_dic[ID]
-#            print d2v_text
-            mean_word_vector = feature.mean_W2V_vector(d2v_text,D2Vmodel)
-#            print mean_word_vector
-#            print type(mean_word_vector)
-#            print type(feature_vector)
-            feature_vector = np.concatenate((mean_word_vector,
+            if embed_type == "word2vec":
+                embed_vector = feature.mean_W2V_vector(d2v_text,D2Vmodel)
+            elif embed_type == "doc2vec":
+                embed_vector = D2Vmodel.docvecs[ID]
+            feature_vector = np.concatenate((embed_vector,
                                              np.array(feature_vector)))
-#            print type(feature_vector)
+
+            thread_id_list.append(ID)
             thread_dic[ID] = feature_vector
         structure = nested_dict.subset_by_key(structure, thread_dic.keys())
         size = len(nested_dict.all_keys(structure))
@@ -269,9 +277,14 @@ for current_dir in walk:
         else:
             event_model_dic[event] = X_train
         
+        if event in event_ID_dic:
+            event_ID_dic[event] += [thread_id_list]
+        else:
+            event_ID_dic[event] = [thread_id_list]
         thread_dic = {}
 
 
+event_model_dic = ["_".join([token_type,embed_type,dims]),event_model_dic]
 
 with open("event_model_dic","w")as modelfile:
     pickle.dump(event_model_dic,modelfile)
@@ -279,6 +292,10 @@ with open("event_model_dic","w")as modelfile:
 with open("event_target_dic","w")as modelfile:
     pickle.dump(event_target_dic,modelfile)
 
+with open("event_ID_dic","w")as modelfile:
+    pickle.dump(event_ID_dic,modelfile)
+
+print event_ID_dic.keys()
 #print graph_size
 #print graph_event, graph_root_id
 #print graph_2_vis 
