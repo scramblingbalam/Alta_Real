@@ -142,15 +142,18 @@ thread_dic = {}
 root_id = 0
 event_model_dic = {}
 
+
 def translatelabel(label):
-    if label == u'deny':
+    if label == 'supporting'or label == 'support':
         return 0
-    if label == u'support':
+    if label == 'denying'or label == 'deny':
         return 1
-    if label == u'query':
+    if label == 'appeal-for-more-information'or label == 'query':
         return 2
-    if label == 'comment':
+    if label == 'comment' or label == '0':
         return 3
+    if label =='imp-denying':
+        return 4
 
 id_target_dic = {}
 
@@ -261,6 +264,7 @@ for current_dir in walk:
             thread_target_vector = [np.array(map(translatelabel, 
                                                 [id_target_dic[i] 
                                                             for i in id_order]))]
+
             if event in event_model_dic:
                 event_target_dic[event] += thread_target_vector
             else:
