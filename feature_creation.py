@@ -261,17 +261,8 @@ for current_dir in walk:
 #        pp.pprint(structure)
         edge_vector = np.array([np.array([id_dic[Id] for Id in edge]) 
                                                         for edge in edge_list])
-#        print edge_vector[0]
-#        print edge_vector[0].shape
-#        np.reshape(edge_vector[0],(edge_vector[0].shape[0],2))
-#        print edge_vector[0]
-#        print edge_vector[0].shape
+
         n_feats = np.array([thread_dic[i] for i in id_order])
-#        n_edges = np.array([edge_vector for i in range(n_feats.shape[0])])
-        print n_edges.shape
-        print n_feats.shape
-#        X_feats = np.vstack([n_nodes,n_feats])
-#        X_feats = np.array([n_nodes,n_feats])
         X_train = [np.array([n_feats,edge_vector])]
         if event in event_model_dic:
             event_model_dic[event] += X_train
