@@ -3,6 +3,7 @@ import socket
 import requests
 import time
 from twit_auth import authentication  # Consumer and access token/key
+import pymongo 
 # original code from 
 # http://piratefache.ch/twitter-streaming-api-with-tweepy/
 
@@ -13,7 +14,7 @@ class TwitterStreamListener(tweepy.StreamListener):
 
     def on_status(self, status):
         get_tweet(status)
-        get_user_informations(status)
+#        get_user_informations(status)
 
     # Twitter error list : https://dev.twitter.com/overview/api/response-codes
 
@@ -24,17 +25,33 @@ class TwitterStreamListener(tweepy.StreamListener):
 
 
 def get_tweet(tweet):
-    print("Tweet Message : " + tweet.text)
-    print("Tweet Favorited \t:" + str(tweet.favorited))
-    print("Tweet Favorited count \t:" + str(tweet.favorite_count))
+    
+    Trump_id = 25073877
+    if tweet.user.id == Trump_id:
+        print "TRUMP_TWEET"
+        print "\tTweet Message : " + tweet.text
+        print "\tTweet Favorited \t:" + str(tweet.favorited)
+        print "\tTweet Favorited count \t:" + str(tweet.favorite_count)
 
     # Display sender and mentions user
     if hasattr(tweet, 'retweeted_status'):
-        print("Tweet send by : " + tweet.retweeted_status.user.screen_name)
-        print("Original tweet ID" + tweet.retweeted_status.id_str)
+        if "@realDonaldTrump" in tweet.retweeted_status.entities['user_mentions']:
+            print "@REAL_DONALD_TRUMP MENTION"
+            print tweet.text
+    if 'in_reply_to_user_id' == Trump_id:
+        print "REPLY 2 REAL_DONALD_TRUMP"
+        print tweet.in_reply_to_status_id
+        print tweet.text
+        print tweet.id
 
-        for screenname in tweet.retweeted_status.entities['user_mentions']:
-            print("Mention user: " + str(screenname['screen_name']))
+    # Display sender and mentions user
+#    if hasattr(tweet, 'retweeted_status'):
+#        if tweet.retweeted_status.id_str:
+#            print "Tweet send by : " + tweet.retweeted_status.user.screen_name)
+#            print tweet.id
+#
+#        for screenname in tweet.retweeted_status.entities['user_mentions']:
+#            print("Mention user: " + str(screenname['screen_name']))
 
 
 def get_user_informations(tweet):
