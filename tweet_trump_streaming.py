@@ -108,4 +108,4 @@ if __name__ == '__main__':
     dan_klyn = "danklyn"
     filter_string = trump_str
 #    myStream.filter(track=[filter_string], async=True)
-    myStream.filter(follow=[str(Trump_id)], replies=all, async=True)
+    myStream.filter(follow=[str(Trump_id)], async=True)
