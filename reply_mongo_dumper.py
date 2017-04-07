@@ -9,7 +9,6 @@ Created on Tue Mar 28 15:18:19 2017
 # encoding: utf-8
 
 import tweepy #https://github.com/tweepy/tweepy
-import csv
 import twit_auth
 from pymongo import MongoClient
 
