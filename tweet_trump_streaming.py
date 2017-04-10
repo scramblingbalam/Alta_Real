@@ -2,7 +2,7 @@ import tweepy
 import socket
 import requests
 import time
-from twit_auth import authentication  # Consumer and access token/key
+import twit_auth #import authentication  # Consumer and access token/key
 import datetime
 import pymongo
 import pprint
@@ -38,11 +38,11 @@ def get_trump_tweet(tweet):
 #    print tweet.text
     
     if tweet.user.id == user_id:
-#        print "TRUMP_TWEET############"
-#        print tweet.user.name,tweet.user.name,tweet.user.name
-#        print "Tweet Message : \n\t",tweet.text
-#        print "Tweet Favorited \n\t:", str(tweet.favorited)
-#        print "Tweet Favorited count \n\t:", str(tweet.favorite_count),"\n"
+        print "TRUMP_TWEET############\n#####################"
+        print tweet.user.name,tweet.user.name,tweet.user.name
+        print "Tweet Message : \n\t",tweet.text
+        print "Tweet Favorited \n\t:", str(tweet.favorited)
+        print "Tweet Favorited count \n\t:", str(tweet.favorite_count),"\n"
         post = tweet._json
         post["_id"] = post["id"]
         trump_tweet_collection = db.trump_tweets
@@ -57,13 +57,13 @@ def get_trump_tweet(tweet):
 def get_reply_tweet(tweet):
     # Display sender and mentions user
     if tweet.in_reply_to_user_id == user_id :
-#        print "REPLY 2 REAL_DONALD_TRUMP__########################"
+        print "REPLY 2 REAL_DONALD_TRUMP__########################"
 #        print "Reply user name\n\t",tweet.user.name
 #        print "\tReply to status\n\t",tweet.in_reply_to_status_id
 #        print "Reply to name\n\t",tweet.in_reply_to_screen_name
-##        print tweet.in_reply_to_screen_name,"Reply 2"
-#        print "Reply Text\n\t",tweet.text,"\n\n"
-#        print tweet.id
+        print tweet.in_reply_to_screen_name,"Reply 2"
+        print "Reply Text\t",tweet.text,"\n\n"
+        print tweet.id
         post = tweet._json
         post["_id"] = post["id"]
         replies_to_trump_collection = db.replies_to_trump
@@ -78,14 +78,12 @@ if __name__ == '__main__':
     client = MongoClient()
     client = MongoClient('localhost', 27017)
     db = client.Alta_Real
-    db = client['Alta_Real']
-    trump_collection = db.Alta_Real
-    trump_collection = db['trump_collection']
-    stream_test_collection = db.Alta_Real
-    stream_test_collection = db['stream_test_collection']
+#    db = client['test-database']
     
     # Get access and key from another class
-    auth = authentication()
+#    auth = twit_auth.authentication1()
+    auth = twit_auth.authentication2()
+#    auth = twit_auth.authentication3()
 #    auth.
     consumer_key = auth.consumer_key
     consumer_secret = auth.consumer_secret
@@ -108,4 +106,4 @@ if __name__ == '__main__':
     dan_klyn = "danklyn"
     filter_string = trump_str
 #    myStream.filter(track=[filter_string], async=True)
-    myStream.filter(follow=[str(Trump_id)], async=True)
+    myStream.filter(follow=[str(user_id)], async=True)
