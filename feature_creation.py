@@ -29,9 +29,9 @@ pp = pprint.PrettyPrinter(indent=0)
 
 # Global Variables 
 dims =str(300)
-token_type = "zub"
+#token_type = "zub"
 embed_type = "word2vec"
-#token_type = "twit"
+token_type = "twit"
 #embed_type = "doc2vec"
 
 
@@ -222,11 +222,12 @@ for current_dir in walk:
             feature_vector += format_binary_vec
             punc_vec = list(feature.punc_binary_gen(text,punc_list))
             feature_vector += punc_vec
-            if token_type == "zub_":
+            if token_type == "zub":
                 cap_ratio = feature.zub_capital_ratio(text)
-            elif token_type == "twit_":
-                print "ERROR write a better captial ratio function"
-                break
+                print "Twit & Zub using same Capitalization Ratio\n\tIs this desirable?"
+            elif token_type == "twit":
+                cap_ratio = feature.zub_capital_ratio(text)
+                print "Twit & Zub using same Capitalization Ratio\n\tIs this desirable?"
             feature_vector += cap_ratio
             word_char_count = feature.word_char_count(id_text_dic[ID])
             feature_vector += word_char_count
