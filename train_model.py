@@ -12,12 +12,17 @@ import cPickle as pickle
 event_feature_dic ={}
 with open("event_model_dic","r")as modelfile:
     event_feature_dic =pickle.load(modelfile)
-    
-#for thread in event_feature_dic['ebola-essien']:
-#    print "\n\n",thread,len(thread)
-#    for i in thread:
-#        print "\t",i,type(i),len(i)
+
+            
+print len(event_feature_dic['ebola-essien'])
   
+thread = event_feature_dic['ebola-essien'][0]
+feats = thread[0]
+edges = thread[1]
+print feats.shape
+print feats
+print edges.shape
+
 event_target_dic ={}
 with open("event_target_dic","r")as modelfile:
     event_target_dic =pickle.load(modelfile)
@@ -25,8 +30,8 @@ with open("event_target_dic","r")as modelfile:
 for k in event_target_dic:
     print k
     
-X_train = event_feature_dic["ferguson"]
-y_train = event_target_dic["ferguson"]
+X_train = event_feature_dic['ebola-essien']
+y_train = event_target_dic['ebola-essien']
 
 model = GraphCRF(directed=True, inference_method="ad3")
 
@@ -35,7 +40,8 @@ ssvm.fit(X_train, y_train)
 y_pred = ssvm.predict(X_train)
 
 for pred, test in zip(y_pred,y_train):
-    print pred,test,"pred"
+    for p,t in zip(pred,test):
+        print p,t
 
 #X_train = [featuregeneration.tree2featuresfromfile(th, dataset, features) for th in train_threads]
 #y_train = [featuregeneration.tree2labels(th) for th in train_threads]
