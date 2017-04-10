@@ -43,33 +43,36 @@ def get_all_replies(screen_name_list):
 	#authorize twitter, initialize tweepy
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
-    api = tweepy.API(auth)
+    api = tweepy.API(auth,wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 	
     #initialize a list to hold all the tweepy Tweets
-    alltweets = []	
 	
     #make initial request for most recent tweets (200 is the maximum allowed count)
 #    new_tweets = api.search(" to:".join(screen_name_list),count=100)
     new_tweets = api.search(" to:".join(screen_name_list),count=100)
     #save most recent tweets
-    alltweets.extend(new_tweets)
+    i = len(new_tweets)
     #save the id of the oldest tweet less one
-    oldest = alltweets[-1].id - 1
-    
+    oldest = new_tweets[-1].id - 1
+    for tweet in new_tweets:
+        post = tweet._json
+        post["_id"] = post["id"]
+        trump_tweet_collection = db.replies_to_trump
+        try:
+            post_id = trump_tweet_collection.insert_one(post).inserted_id
+        except:
+            pass
     #keep grabbing tweets until there are no tweets left to grab
     while len(new_tweets) > 0:
-        print "getting tweets before %s" % (oldest)
+#        print "getting tweets before %s" % (oldest)
         #all subsiquent requests use the max_id param to prevent duplicates
         new_tweets = api.search(" to:".join(screen_name_list),count=100,max_id=oldest)
-        
-        #save most recent tweets
-        alltweets.extend(new_tweets)
-        
+        i += len(new_tweets)
         #update the id of the oldest tweet less one
-        oldest = alltweets[-1].id - 1
-        print "...%s tweets downloaded so far" % (len(alltweets))
+        oldest = new_tweets[-1].id - 1
+        print "...%s tweets downloaded so far" % (i)
     # ins
-        for tweet in alltweets:
+        for tweet in new_tweets:
             post = tweet._json
             post["_id"] = post["id"]
             trump_tweet_collection = db.replies_to_trump
@@ -77,7 +80,6 @@ def get_all_replies(screen_name_list):
                 post_id = trump_tweet_collection.insert_one(post).inserted_id
             except:
                 pass
-
 
 if __name__ == '__main__':
     name_list = ['realDonaldTrump']
