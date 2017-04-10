@@ -9,15 +9,15 @@ Created on Tue Mar 28 15:18:19 2017
 # encoding: utf-8
 
 import tweepy #https://github.com/tweepy/tweepy
-import twit_auth
+import twit_auths
 from pymongo import MongoClient
 
 #Twitter API credentials fron twit_auth
-auth1 = twit_auth.authentication1()
-auth2 = twit_auth.authentication2()
-auth3 = twit_auth.authentication3()
-auth4 = twit_auth.authentication4()
-auth5 = twit_auth.authentication5()
+auth1 = twit_auths.authentication1()
+auth2 = twit_auths.authentication2()
+auth3 = twit_auths.authentication3()
+auth4 = twit_auths.authentication4()
+auth5 = twit_auths.authentication5()
 
 # this code needs to change for Python 3 to use the function
 
