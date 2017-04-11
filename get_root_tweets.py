@@ -19,7 +19,7 @@ client = MongoClient('localhost', 27017)
 db = client.Alta_Real
 #db = client['test-database']
     
-    # Get access and key from another class
+# Get access and key from another class
 #auth = twit_auth.authentication1()
 #auth = twit_auth.authentication3()
 auth = twit_auth.authentication4()
