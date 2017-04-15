@@ -15,8 +15,7 @@ Trump_id = 25073877
 fin_test = 99097480
 dan_klyn = 10089542
 user_id = Trump_id
-reply_count = 0
-trump_count = 0
+
 class TwitterStreamListener(tweepy.StreamListener):
     """ A listener handles tweets are the received from the stream.
     This is a basic listener that just prints received tweets to stdout.
@@ -47,8 +46,7 @@ def get_trump_tweet(tweet):
             post_id = trump_tweet_collection.insert_one(post).inserted_id
             print "TRUMP_TWEET\n\tINSERT _ID",post_id
             print "\t",post["text"]
-            print "\tTrump_#",trump_count
-            print "\tReply+#",reply_count
+
         except:
             pass
 #        pprint.pprint(posts.find_one())
@@ -63,7 +61,6 @@ def get_reply_tweet(tweet):
         replies_to_trump_collection = db.replies_to_trump
         try:
             post_id = replies_to_trump_collection.insert_one(post).inserted_id
-            reply_count +=1
 #            print "REPLY 2 REAL_DONALD_TRUMP\n\tINSERT _ID",post_id
         except:
             pass
