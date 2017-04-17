@@ -16,13 +16,19 @@ pp = pprint.PrettyPrinter(indent=0)
 
 
 def get_root_drop_branches(child_collection,parent_collection,db):
+    """ Inserts replies to children, deletes if no parent or if not a reply
+    """
     trump_ids = list(db[parent_collection].distinct("id"))
     #no_status_error = "[{u'message': u'No status found with that ID.', u'code': 144}]"
+    No_reply_deleted = 0
+    No_root_deleted = 0
+    root_inserted = 0
     for status_id in db[child_collection].distinct("in_reply_to_status_id"):
         if not status_id:
-            print dict(db["child_collection"].delete_many({"in_reply_to_status_id":status_id})),"DELETE_MANY"
-#            for i in db[child_collection].remove({"in_reply_to_status_id":status_id}):
-#                print "Documnet removed",i
+            del_dict = {"in_reply_to_status_id":status_id}
+            dNum = db[child_collection].delete_many(del_dict).deleted_count
+            No_reply_deleted += dNum
+            print "Not reply deleted",dNum,"\n" 
         elif status_id not in trump_ids:
             try:
                 tweet = api.get_status(str(status_id))
@@ -31,25 +37,36 @@ def get_root_drop_branches(child_collection,parent_collection,db):
                 trump_tweet_collection = db[parent_collection]
                 try:
                     post_id = trump_tweet_collection.insert_one(post).inserted_id
+                    root_inserted += 1
+                    print "_ID",post_id,"inserted"
                 except:
                     pass
             except Exception as error:
-                print "\tERROR\n",error,"\n",status_id,"\n\tERROR"
-    #            removed_ids =[i["_id"] for i in db["child_collection"].find({"in_reply_to_status_id":status_id})]
-                print db["child_collection"].delete_many({"in_reply_to_status_id":status_id})
-#                for rm_id in db["child_collection"].delete_many({"in_reply_to_status_id":status_id}):
-#                    print "Documnet removed",rm_id
-            
-            
+                print "\tERROR\n",error,"\n","status_id",status_id,"\n\tERROR"
+                del_dict = {"in_reply_to_status_id":status_id}
+                dNum = db[child_collection].delete_many(del_dict).deleted_count
+                No_root_deleted = dNum
+                print "Root not found deleted",dNum,"\n"
+                
+    if root_inserted + No_reply_deleted + No_root_deleted > 0:
+        print "CHANGES TO",db
+        print "INSERTS TO", parent_collection
+        print "Total parent tweets inserted", root_inserted 
+        print "DELETED FROM",child_collection
+        print "Total tweets deleted",No_reply_deleted + No_root_deleted
+        print "\tNumber deleted because not a reply",No_reply_deleted
+        print "\tNumber deleted because no root found",No_root_deleted
 
+    
 if __name__ == "__main__":
     client = MongoClient()
     client = MongoClient('localhost', 27017)
     DB = client.Alta_Real
-    DB = client['test-database']
+#    DB = client['test-database']
         
     # Get access and key from another class
     #auth = twit_auth.authentication1()
+    #auth = twit_auth.authentication2()
     #auth = twit_auth.authentication3()
     auth = twit_auth.authentication4()
     #auth = twit_auth.authentication5()
