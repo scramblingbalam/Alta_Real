@@ -81,8 +81,8 @@ if __name__ == '__main__':
 #    auth = twit_auth.authentication1()
 #    auth = twit_auth.authentication2()
 #    auth = twit_auth.authentication3()
-#    auth = twit_auth.authentication4()
-    auth = twit_auth.authentication5()
+    auth = twit_auth.authentication4()
+#    auth = twit_auth.authentication5()
 
     # this code needs to change for Python 3 to use the function
     consumer_key = auth.consumer_key
