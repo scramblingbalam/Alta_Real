@@ -109,7 +109,7 @@ if __name__ == "__main__":
     client = MongoClient()
     client = MongoClient('localhost', 27017)
     DB = client.Alta_Real
-    DB = client['test_tree']
+#    DB = client['test_tree']
 #    DB = client['test-tree']
         
     # Get access and key from another class
@@ -132,8 +132,8 @@ if __name__ == "__main__":
     
     api = tweepy.API(auth,wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 #    root_name = "drchuck"
-#    root_name = "realDonaldTrump"
-    root_name = "danklyn"
+    root_name = "realDonaldTrump"
+#    root_name = "danklyn"
     parent_coll_name = "trump_tweets"
     child_coll_name = "replies_to_trump"
     
@@ -141,3 +141,6 @@ if __name__ == "__main__":
 #    child_coll_name = "trump_tweets"
 
     get_root_drop_branches(root_name,child_coll_name,parent_coll_name,DB)
+    
+    
+    
