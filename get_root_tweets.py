@@ -99,6 +99,9 @@ def get_root_drop_branches(root_user,child_collection,parent_collection,db):
         print "DELETED FROM",parent_collection
         print "\tNumber deleted because no root found",Not_root_user_del
         print "tNumber deleted because reply not root",in_root_but_not_root
+    else:
+        print "None deleted"
+    print "FINISHED"
 
 def delete_branch_is_root(child_collection,parent_collection,db):
     for i in child:
