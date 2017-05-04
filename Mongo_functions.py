@@ -6,6 +6,8 @@ Created on Sun Apr 16 14:32:23 2017
 """
 from bson.son import SON
 from pymongo import MongoClient
+import networkx as nx
+import bson
 
 test_dict ={
 851588099360649216: "root_tweet",
@@ -20,7 +22,17 @@ test_dict ={
 851595212468084736: "top_reply_3"
  }
 
+def get_tweet_time(TWEET):
+    strfts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(TWEET['created_at'],'%a %b %d %H:%M:%S +0000 %Y'))
+    ts = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(time.mktime(time.strptime(TWEET['created_at'],'%a %b %d %H:%M:%S +0000 %Y'))) )
+    return ts,strfts
 
+def id2edgelist(mongo_id,collection):
+    list_dicts = list(collection.find({"_id":biggest_id}))[0]
+    edges = []
+    for i in list_dicts['edge_list']:
+        edges.append((i['parent'],i['child']))
+    return edges
 
 def edge_list(collections_list,DB):
     """ Takes Tweets from MongoDB and creates directed edge_lists in new collections 
@@ -33,51 +45,76 @@ def edge_list(collections_list,DB):
     child_coll = collections_list[0]
     parent_coll = collections_list[1]
     
-    edge_collection = db.edge_list
+    edge_coll = db.edge_list
     thread_root_ids = []
-    thread_child_ids = set(edge_collection.distinct("edge_list.child"))
-    thread_parent_ids = set(edge_collection.distinct("edge_list.parent"))
-    thread_root_ids = set(edge_collection.distinct("_id"))
+    thread_child_ids = set(edge_coll.distinct("edge_list.child"))
+    thread_parent_ids = set(edge_coll.distinct("edge_list.parent"))
+    thread_root_ids = set(edge_coll.distinct("_id"))
     print thread_root_ids == thread_parent_ids
     for num, collection in enumerate(collections_list):
         if num == 0:
             print collection
-            for tweet in DB[collection].find():
-                if tweet["in_reply_to_status_id"]:
-                    if tweet["in_reply_to_status_id"] in thread_child_ids:  
-                        edge_collection.update_one(
-                                {"edge_list.child":tweet["in_reply_to_status_id"]},
+            for tweet in DB[collection].find({}):
+                edge = [tweet["in_reply_to_status_id"],tweet["id"]]
+                if edge[0]:
+                    if edge[0] in thread_child_ids:
+#                        if 851596235949658112 in tweet.values():
+#                            print "\tIF"
+#                            print "\t",edge[0],edge[1]
+                        edge_coll.update_one(
+                                {"edge_list.child":edge[0]},
                                 {"$push": {"edge_list":
-                                    {"parent":tweet["in_reply_to_status_id"],
-                                     "child":tweet["id"]}
+                                    {"parent":edge[0],
+                                     "child":edge[1]}
                                     }
                                 })
-                        thread_child_ids.add(tweet["id"])
-                        thread_parent_ids.add(tweet["in_reply_to_status_id"])
-                    elif tweet["in_reply_to_status_id"] not in thread_root_ids:
-                        post = {"_id": tweet["in_reply_to_status_id"],
-                            "edge_list": [
-                                {"parent":tweet["in_reply_to_status_id"],
-                                "child":tweet["id"]}
-                                ]}
-                        post_id = edge_collection.insert_one(post).inserted_id
-                        print post_id,"<--",tweet["id"]
-                        print test_dict[post_id],"<--",test_dict[tweet["id"]],"\n"
-                        thread_root_ids.add(post_id)
-                        thread_child_ids.add(tweet["id"])
-                        thread_parent_ids.add(tweet["in_reply_to_status_id"])
-#                        thread_root_ids = edge_collection.distinct("_id")
-                    elif tweet["id"] not in thread_child_ids:  
-                        print test_dict[tweet["id"]],"ELSE\n"
-                        edge_collection.update_one(
-                                {"_id":tweet["in_reply_to_status_id"]},
+                        thread_child_ids.add(edge[1])
+                        thread_parent_ids.add(edge[0])
+                        if edge[1] in thread_root_ids:
+                            subThread =list(edge_coll.find({"_id":edge[1]}))
+                            for edg in subThread[0]["edge_list"]:
+                                edge_coll.update_one(
+                                    {"edge_list.child":edge[0]},
+                                    {"$push": {"edge_list":
+                                        edg
+                                        }
+                                    })
+                            edge_coll.delete_one({"_id":edge[1]})                
+                    elif edge[0] not in thread_root_ids:
+#                        if 851596235949658112 in tweet.values():
+#                            print "\tELIF_1"
+#                            print "\t",edge[0],edge[1]
+                        if db[parent_coll].find({'_id':edge[0]}):
+                            post = {"_id": edge[0],
+                                "edge_list": [
+                                    {"parent":edge[0],
+                                    "child":edge[1]}
+                                    ]}
+                            post_id = edge_coll.insert_one(post).inserted_id
+                            print post_id,"<--",edge[1]
+                            thread_root_ids.add(post_id)
+                            thread_child_ids.add(edge[1])
+                            thread_parent_ids.add(edge[0])
+                        else:
+                            db[child_coll].delete_one({'_id':tweet['id']})
+                            
+                    elif edge[1] not in thread_child_ids:  
+#                        if 851596235949658112 in tweet.values():
+#                            print "\tELIF_2"
+#                            print "\t",edge[0],edge[1]
+#                        if db[parent_coll].find({'_id':edge[0]}):
+                        edge_coll.update_one(
+                                {"_id":edge[0]},
                                 {"$push": {"edge_list":
-                                    {"parent":tweet["in_reply_to_status_id"],
-                                     "child":tweet["id"]}
+                                    {"parent":edge[0],
+                                     "child":edge[1]}
                                     }
                                 })
-                        thread_child_ids.add(tweet["id"])
-                        thread_parent_ids.add(tweet["in_reply_to_status_id"])
+                        thread_child_ids.add(edge[1])
+                        thread_parent_ids.add(edge[0])
+#                        else:
+#                            db[child_coll].delete_one({'_id':tweet['id']})
+            print "Finished first collection"
         else:
             # Decide if you want to do anything to with this to support different
             # strage approches....
@@ -87,21 +124,89 @@ def edge_list(collections_list,DB):
             children = collections_list[num-1]
             child_ids = DB[children].distinct("id")
             for tweet in DB[collection].find():
-                if tweet["in_reply_to_status_id"]:
-                    if tweet["id"] in child_ids:
+                if edge[0]:
+                    if edge[1] in child_ids:
                         threads += 1
             print "threads", threads
+
+
+
+def remove_old_threads(DB,id_date):
+    test =856172056932700164
+#    for thread in list(DB.edge_list.find({"_id":test}))[:10]:
+    del_replies = 0 
+    del_roots = 0
+    del_threads = 0
+    for thread in list(DB.edge_list.find({}))[:100]:
+        thread_old = []
+        id_set = set()
+        if thread['_id'] < id_date:
+            for edge in thread['edge_list']:
+                id_set.add(edge['parent'])
+                id_set.add(edge['child'])
+            del_roots +=1
+            id_list = list(id_set - set([thread['_id']]))
+            del_replies += len(id_list)
+#            DB.trump_tweets.delete_one({'_id':thread['_id']})
+#            del_dic ={'_id':{'$is':list(id_set)}}
+#            DB.replies_to_trump.delete_many(del_dic)
+#            DB.edge_list.delete_one({'_id':thread['_id']})
+            del_threads +=1
+        else:
+            for edge in thread['edge_list']:
+                id_set.add(edge['parent'])
+                id_set.add(edge['child'])
+                thread_old.append(edge['child'] < id_date)
+                thread_old.append(edge['parent'] < id_date)
+            if any(thread_old):
+                del_roots +=1
+                id_list = list(id_set - set([thread['_id']]))
+                del_replies += len(id_list)
+#                DB.trump_tweets.delete_one({'_id':thread['_id']})
+#                del_dic ={'_id':{'$is':list(id_set)}}
+#                DB.replies_to_trump.delete_many(del_dic)
+#                DB.edge_list.delete_one({'_id':thread['_id']})
+                del_threads +=1
+        
+    changes = [del_replies,del_roots,del_threads]
+    if sum(changes)>0:
+        print 'Number deleted from "replies_to_tweets"',del_replies
+        print 'Number deleted from "trump_tweets"',del_roots
+        print 'Number deleted from "edge_list"',del_threads
+    else:
+        print "None deleted"
+    print "FINISHED"
+    
             
 if __name__ == "__main__":
     client = MongoClient()
     client = MongoClient('localhost', 27017)
 #    db = client.Alta_Real
-#    db = client["test-database"]
+#    db = client["test-tree"]
     db = client.test_tree
     collection_names = ["replies_to_trump","trump_tweets","test_parents"]
     collection_names = ["replies_to_trump","trump_tweets"]
-#    for i in collection_names:
-#        print db[i].distinct("id")
+
+#    """
     edge_list(collection_names,db)
     edge_collection = db.edge_list
-    print edge_collection.find_one()
+    big_thread = edge_collection.aggregate( [{ "$unwind" : "$edge_list" },
+            { "$group" : { "_id" : "$_id", "len" : { "$sum" : 1 } } },
+            { "$sort" : { "len" : -1 } },
+            { "$limit" : 1 }
+            ] )
+#    print list(big_thread)
+    biggest_id =  list(big_thread)[0]["_id"]
+    print biggest_id
+    DG=nx.DiGraph()
+    DG.add_edges_from(id2edgelist(biggest_id,edge_collection))
+#    nx.draw_random(DG, with_labels=False)
+    nx.draw_random(DG, with_labels=True)
+#    """
+    old_id = 856425255862235136
+#    oldest_time = list(db.replies_to_trump.find({"_id":old_id}))[0]["created_at"]
+#    oldest_id = list(db.replies_to_trump.find({"_id":old_id}))[0]["_id"]
+#    remove_old_threads(db,old_id)
+#    remove_old_threads(db,oldest_time)
+    
+    
