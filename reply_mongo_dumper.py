@@ -15,9 +15,9 @@ from pymongo import MongoClient
 #Twitter API credentials fron twit_auth
 # auth = twit_auth.authentication1()
 #auth = twit_auth.authentication2()
-# auth = twit_auth.authentication3()
-# auth = twit_auth.authentication4()
-auth = twit_auth.authentication5()
+#auth = twit_auth.authentication3()
+auth = twit_auth.authentication4()
+#auth = twit_auth.authentication5()
 
 
 # this code needs to change for Python 3 to use the function
@@ -103,6 +103,6 @@ if __name__ == '__main__':
                 "count": {"$sum":1}
                 }    
             }]
-    oldest_id =list(DB.trump_tweets.aggregate(pipeline_oldest))[0]["oldest"]
+    oldest_id =list(db.replies_to_trump.aggregate(pipeline_oldest))[0]["oldest"]
     #pass in the username of the account you want to download
     get_all_replies(name_list,oldest_id)
