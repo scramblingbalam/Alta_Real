@@ -11,6 +11,7 @@ import json
 #import cPickle as pickle
 import twit_token
 import unicodedata as uniD
+import os
 import nltk
 import re
 from pymongo import MongoClient
@@ -42,10 +43,41 @@ twit_text_list = []
 id_list = []
 
 
+train_dir = "Data/semeval2017-task8-dataset"
+train_dic_dir = "traindev"
+
+train_data_dir ="rumoureval-data"
+top_path = "/".join([train_dir,train_data_dir])
+#top_path = ferg_1_path 
+
+walk = os.walk(top_path)
 
 source_id = ""
 reply_id = ""
 
+#get tweets from files
+for current_dir in walk:
+    last_dir = current_dir[0].split("\\")[-1]
+    if last_dir == "source-tweet" or last_dir == "replies":
+        for json_path in current_dir[-1]:
+            with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
+                filedic = json.load(jsonfile)
+                
+                text =  filedic["text"].lower()
+                
+                zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
+                zub_id_text_dic[filedic["id"]] = zub_text
+                zub_text_list.append(zub_text)
+                
+                text_in = text.replace("\n","N3WL1N3")#+'\r\n'
+
+                twit_text = " ".join(twit_token.ize(text_in))
+                twit_id_text_dic[filedic["id"]] = twit_text
+                twit_text_list.append(twit_text)
+
+                id_list.append(filedic["id"])
+
+# Get tweets from DB
 for tweet in list(root_db.find())+list(reply_db.find()):
     text =  tweet["text"].lower()
                 
@@ -69,7 +101,7 @@ for z_tweet,t_tweet in zip(zub_text_list,twit_text_list[:10]):
     print(z_tweet)
     print(t_tweet,'\n')      
               
-doc2vec_dir ="Data/doc2vec/trump"
+doc2vec_dir ="Data/doc2vec/trump_plus"
 with open(doc2vec_dir+"twit_id_text_dic.json","w") as picfile:
     json.dump(twit_id_text_dic,picfile)
 
