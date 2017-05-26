@@ -392,63 +392,63 @@ if __name__ == '__main__':
         print("No_New_Roots",set(train_roots)==set(DB_train.trump_tweets.distinct("_id")))
         print("No_New_Replies",set(train_replies)==set(DB_train.replies_to_trump.distinct("_id")))
     ######## Process each tweet to create a feature vector
-#            for tweet in json_list:
-#                twt_ID, feat_vector = process_tweet(tweet)
-#                thread_id_list.append(twt_ID)
-#                thread_dic[twt_ID] = feat_vector
-#            size = len(nested_dict.all_keys(structure))
-#            if 60>size>graph_size:
-#                graph_2_vis = edge_list
-#                graph_size = size
-#                graph_event = event
-#                graph_root_id =root_id
-#                
-#            id_dic = feature.id_index_dic(edge_list)
-#            id_order = [i[0] for i in sorted(id_dic.items(),key=lambda x:(x[1],x[0]))]
-#            # create an array for each thread an append to the event_target_dic        
-#            if event != "germanwings-crash":
-#                thread_target_vector = [np.array(map(translatelabel, 
-#                                                    [id_target_dic[i] 
-#                                                                for i in id_order]))]
-#    
-#                if event in event_model_dic:
-#                    event_target_dic[event] += thread_target_vector
-#                else:
-#                    event_target_dic[event] = thread_target_vector
-#       
-#    #        pp.pprint(structure)
-#            edge_vector = np.array([np.array([id_dic[Id] for Id in edge]) 
-#                                                            for edge in edge_list])
-#    
-#            n_feats = np.array([thread_dic[i] for i in id_order])
-#            X_train = [np.array([n_feats,edge_vector])]
-#            if event in event_model_dic:
-#                event_model_dic[event] += X_train
-#            else:
-#                event_model_dic[event] = X_train
-#            
-#            if event in event_ID_dic:
-#                event_ID_dic[event] += [thread_id_list]
-#            else:
-#                event_ID_dic[event] = [thread_id_list]
-#            thread_dic = {}
-#
-#    event_model_dic = ["_".join([token_type,embed_type,dims]),event_model_dic]
-#    
-#    with open("event_model_dic","wb")as modelfile:
-#        pickle.dump(event_model_dic,modelfile)
-#    
-#    with open("event_target_dic","wb")as modelfile:
-#        pickle.dump(event_target_dic,modelfile)
-#    
-#    with open("event_ID_dic","wb")as modelfile:
-#        pickle.dump(event_ID_dic,modelfile)
-#    
-#    print( event_ID_dic.keys())
-#    #print graph_size
-#    #print graph_event, graph_root_id
-#    print(graph_2_vis) 
-#    #DG=nx.DiGraph()
+            for tweet in json_list:
+                twt_ID, feat_vector = process_tweet(tweet)
+                thread_id_list.append(twt_ID)
+                thread_dic[twt_ID] = feat_vector
+            size = len(nested_dict.all_keys(structure))
+            if 60>size>graph_size:
+                graph_2_vis = edge_list
+                graph_size = size
+                graph_event = event
+                graph_root_id =root_id
+                
+            id_dic = feature.id_index_dic(edge_list)
+            id_order = [i[0] for i in sorted(id_dic.items(),key=lambda x:(x[1],x[0]))]
+            # create an array for each thread an append to the event_target_dic        
+            if event != "germanwings-crash":
+                thread_target_vector = [np.array(map(translatelabel, 
+                                                    [id_target_dic[i] 
+                                                                for i in id_order]))]
+    
+                if event in event_model_dic:
+                    event_target_dic[event] += thread_target_vector
+                else:
+                    event_target_dic[event] = thread_target_vector
+       
+    #        pp.pprint(structure)
+            edge_vector = np.array([np.array([id_dic[Id] for Id in edge]) 
+                                                            for edge in edge_list])
+    
+            n_feats = np.array([thread_dic[i] for i in id_order])
+            X_train = [np.array([n_feats,edge_vector])]
+            if event in event_model_dic:
+                event_model_dic[event] += X_train
+            else:
+                event_model_dic[event] = X_train
+            
+            if event in event_ID_dic:
+                event_ID_dic[event] += [thread_id_list]
+            else:
+                event_ID_dic[event] = [thread_id_list]
+            thread_dic = {}
+
+    event_model_dic = ["_".join([token_type,embed_type,dims]),event_model_dic]
+    
+    with open("event_model_dic","wb")as modelfile:
+        pickle.dump(event_model_dic,modelfile)
+    
+    with open("event_target_dic","wb")as modelfile:
+        pickle.dump(event_target_dic,modelfile)
+    
+    with open("event_ID_dic","wb")as modelfile:
+        pickle.dump(event_ID_dic,modelfile)
+    
+    print( event_ID_dic.keys())
+    #print graph_size
+    #print graph_event, graph_root_id
+    print(graph_2_vis) 
+    #DG=nx.DiGraph()
     #DG.add_edges_from(graph_2_vis)
     #nx.draw_random(DG, with_labels=False)
     
