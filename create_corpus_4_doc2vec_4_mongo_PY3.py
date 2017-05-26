@@ -30,6 +30,10 @@ db = client[DBname]
 # this code needs to change for Python 3 to use the function
 reply_db = db.replies_to_trump
 root_db = db.trump_tweets
+DB_train = client['semeval2017']
+# this code needs to change for Python 3 to use the function
+reply_train_db = DB_train.replies_to_trump
+root_train_db = DB_train.trump_tweets
 
 
 #top_path = ferg_1_path 
@@ -50,35 +54,35 @@ train_data_dir ="rumoureval-data"
 top_path = "/".join([train_dir,train_data_dir])
 #top_path = ferg_1_path 
 
-walk = os.walk(top_path)
-
 source_id = ""
 reply_id = ""
 
 #get tweets from files
-for current_dir in walk:
-    last_dir = current_dir[0].split("\\")[-1]
-    if last_dir == "source-tweet" or last_dir == "replies":
-        for json_path in current_dir[-1]:
-            with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
-                filedic = json.load(jsonfile)
-                
-                text =  filedic["text"].lower()
-                
-                zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
-                zub_id_text_dic[filedic["id"]] = zub_text
-                zub_text_list.append(zub_text)
-                
-                text_in = text.replace("\n","N3WL1N3")#+'\r\n'
-
-                twit_text = " ".join(twit_token.ize(text_in))
-                twit_id_text_dic[filedic["id"]] = twit_text
-                twit_text_list.append(twit_text)
-
-                id_list.append(filedic["id"])
+if not DB_train.edge_list.find_one():
+    walk = os.walk(top_path)
+    for current_dir in walk:
+        last_dir = current_dir[0].split("\\")[-1]
+        if last_dir == "source-tweet" or last_dir == "replies":
+            for json_path in current_dir[-1]:
+                with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
+                    filedic = json.load(jsonfile)
+                    
+                    text =  filedic["text"].lower()
+                    
+                    zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
+                    zub_id_text_dic[filedic["id"]] = zub_text
+                    zub_text_list.append(zub_text)
+                    
+                    text_in = text.replace("\n","N3WL1N3")#+'\r\n'
+    
+                    twit_text = " ".join(twit_token.ize(text_in))
+                    twit_id_text_dic[filedic["id"]] = twit_text
+                    twit_text_list.append(twit_text)
+    
+                    id_list.append(filedic["id"])
 
 # Get tweets from DB
-for tweet in list(root_db.find())+list(reply_db.find()):
+for tweet in list(root_db.find())+list(reply_db.find())+list(reply_train_db.find())+list(root_train_db.find()):
     text =  tweet["text"].lower()
                 
     zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
