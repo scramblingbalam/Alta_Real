@@ -130,13 +130,9 @@ def translatelabel(label):
 
 id_target_dic = {}
 
-train_dir 
-train_dic_dir 
-dev = "rumoureval-subtaskA-dev.json"
-train = "rumoureval-subtaskA-train.json"
-target_path = "\\".join([train_dir,train_dic_dir,train])
-with open(target_path,"r")as targetfile:
-    id_target_dic = json.load(targetfile) 
+#train_dir 
+#train_dic_dir 
+
     
 label_list =[]
 
@@ -259,18 +255,20 @@ thread_list=[]
 #        else:
 #            event_ID_dic[event] = [thread_id_list]
 #        thread_dic = {}
-def files_to_mongo(root_path,db,collection):
+def files_to_mongo(root_path,db):
     """ Moves tweets from their file structure to mongo
     """
     walk = os.walk(root_path)
+    threads_errors = []
+    root_errors = []
+    replies_errors = []
     for current_dir in walk:
         if 'structure.json' in current_dir[-1]:
             event = current_dir[0].split("\\")[-2]
         last_dir = current_dir[0].split("\\")[-1]
         if last_dir == "replies":
-            thread_id_list = []
-            feature_vector =[]
             json_list =[]
+            root_tweet = {}
             rep_path =current_dir[0]
             root_path = rep_path.split("\\")
             with open("\\".join(root_path[:-1])+"\\"+'structure.json',"r")as jsonfile:
@@ -279,21 +277,40 @@ def files_to_mongo(root_path,db,collection):
             source_path = root_path
             source_path[-1]="source-tweet"
             source_path = "\\".join(source_path)
-            root_id =os.listdir(source_path)[0]
-            with open(source_path+"\\"+root_id,"r")as jsonfile:
-                json_list.append(json.load(jsonfile))
+            root =os.listdir(source_path)[0]
+            with open(source_path+"\\"+root,"r")as jsonfile:
+                root_tweet = json.load(jsonfile)
             for json_path in current_dir[-1]:
                 with open(current_dir[0]+"\\"+json_path,"r")as jsonfile:
                     json_list.append(json.load(jsonfile))
-            print(list(map(lambda x: x.get("id"),json_list)))
-            print(event)
-            edge_list = nested_dict
-            print(structure)
-            structure = nested_dict.subset_by_key(structure, thread_dic.keys())
-            size = len(nested_dict.all_keys(structure))
-            edge_list = nested_dict.to_edge_list(structure)
-            print("\n--------------------")
-
+            thread_list = list(map(lambda x: x.get("id_str"),json_list))
+            root_id = root_tweet['id']
+            thread_list.append(str(root_id))
+            structure = nested_dict.subset_by_key(structure, thread_list)
+            edge_list = nested_dict.to_edge_list(nested_dict.map_keys(int,structure))
+            fields = ["parent","child"]
+            mongo_update = {"_id":root_id,
+                            "event":event,
+                            "edge_list":nested_dict.vecs_to_recs(edge_list,fields)}
+            try:
+                db.edge_list.insert_one(mongo_update).inserted_id
+            except Exception as err:
+#                print(err)
+                threads_errors.append(root_id)
+            for twt in json_list:
+                twt["_id"] = twt["id"]
+                try:
+                    db.replies_to_trump.insert_one(twt).inserted_id
+                except Exception as err:
+#                    print(err)
+                    replies_errors.append(twt["id"])
+            root_tweet["_id"] = root_id
+            try:
+                db.trump_tweets.insert_one(root_tweet)
+            except Exception as err:
+#                print(err)
+                root_errors.append(root_id)
+    return threads_errors, root_errors, replies_errors
 
 
 
@@ -330,7 +347,7 @@ def process_tweet(tweet):
             
     d2v_text = D2V_id_text_dic[ID]
     if embed_type == "word2vec":
-        embed_vector = feature.mean_W2V_vector(d2v_text,D2Vmodel)
+        embed_vector = feature.mean_W2V_vector(d2v_text,D2Vmodel)   
     elif embed_type == "doc2vec":
         embed_vector = D2Vmodel.docvecs[ID]
     feature_vector = np.concatenate((embed_vector,
@@ -348,25 +365,38 @@ if __name__ == '__main__':
     DBname = 'Alta_Real_New'
     DBhost = 'localhost'
     DBport = 27017
-    
+    DBname_t = 'semeval2017'
     # initiate Mongo Client
     client = MongoClient()
     client = MongoClient(DBhost, DBport)
-    DB = client[DBname]
+    DB_trump = client[DBname]
+    DB_train = client[DBname_t]
     # collection where SemEval data is stored
-    collection_train = "semeval2017_task8"
-    
-    if not DB[collection_train].find_one():    
-        train_data_dir ="rumoureval-data"
-        train_dir = "Data\\semeval2017-task8-dataset"
+    dev = "rumoureval-subtaskA-dev.json"
+    train = "rumoureval-subtaskA-train.json"
+    train_data_dir ="rumoureval-data"
+    train_dir = "Data\\semeval2017-task8-dataset"
+    target_path = "\\".join([train_dir,train_dic_dir,train])
+    with open(target_path,"r")as targetfile:
+        id_target_dic = json.load(targetfile) 
+    if not DB_train.edge_list.find_one():
         top_path = "\\".join([train_dir,train_data_dir])
-        files_to_mongo(top_path,DB,collection)
+        posted = files_to_mongo(top_path,DB_train)
+        train_threads, train_roots, train_replies = posted
+    else:
+        DB_train.edge_list.find_one()
+        top_path = "\\".join([train_dir,train_data_dir])
+        posted = files_to_mongo(top_path,DB_train)
+        train_threads, train_roots, train_replies = posted
+        print("No_New_Threads",set(train_threads)==set(DB_train.edge_list.distinct("_id")))
+        print("No_New_Roots",set(train_roots)==set(DB_train.trump_tweets.distinct("_id")))
+        print("No_New_Replies",set(train_replies)==set(DB_train.replies_to_trump.distinct("_id")))
     ######## Process each tweet to create a feature vector
 #            for tweet in json_list:
 #                twt_ID, feat_vector = process_tweet(tweet)
 #                thread_id_list.append(twt_ID)
 #                thread_dic[twt_ID] = feat_vector
-
+#            size = len(nested_dict.all_keys(structure))
 #            if 60>size>graph_size:
 #                graph_2_vis = edge_list
 #                graph_size = size
