@@ -39,5 +39,5 @@ def compiler(UNI_CATs=['So','Po','Pi'],URL=True,ATs=True,HASHs=True):
 
 def ize(string,regex=compiler()):
     tokenizer = nltk.RegexpTokenizer(regex)
-    return tokenizer.tokenize(string.replace("\n","NEWLINE"))
+    return tokenizer.tokenize(string)
 
