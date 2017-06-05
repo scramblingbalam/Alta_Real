@@ -19,8 +19,13 @@ def mean_W2V_vector(text,model):
 
 def pos_extract(path):
     pos_tweets = []
-    with open(path,"r")as POSfile:
-        pos_tweets = [json.loads(twt) for twt in POSfile.readlines()]
+    if isinstance(path,list):
+        for pos_path in path:
+            with open(pos_path,"r")as POSfile:
+                pos_tweets += [json.loads(twt) for twt in POSfile.readlines()]
+    else:
+        with open(path,"r")as POSfile:
+            pos_tweets = [json.loads(twt) for twt in POSfile.readlines()]
     #create set of all used POS tags
     pos_tag_set = set([pos['category'] for twt in pos_tweets for pos in twt[u'entities'][u'Token']])
 
