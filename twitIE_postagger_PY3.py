@@ -13,7 +13,8 @@ from copy import deepcopy
 import twit_token
 import nltk
 import re
-
+import sys
+import time
 
 gate_out = "GATE_out_replies_to_trump_Test_Recurse.json"
 gate_out = "corpus_twitIE_POS"
@@ -29,6 +30,53 @@ test_tweet ={"text":"Mike Brown was staying with his grandmother for the summer,
 
 
 #non_english_event =[]
+def tag_tweet_zub(tweet,tagger=StanfordPOSTagger('gate-EN-twitter.model')):
+    # get indicies for words 
+    tokens = nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',tweet['text']))
+    text = " ".join(tokens)
+    tags = tagger.tag(tokens)
+    index_tags = []
+    for word,tag in tags:
+        try:
+            index_tags = [{'indices':[text.index(word),text.index(word)+len(word)],
+                           'category':tag} for word,tag in tags]
+        except:
+            try:
+                index_tags = [{'category':tag} for word,tag in tags]
+            except:
+                error_id = tweet["_id"]
+                print(error_id)
+                return error_id
+                
+    tweet['entities'].update({'Token':index_tags})
+    tagged_tweet = json.dumps(tweet)+"\n"
+    with open(POS_dir+tok+DBname+"_twitIE_POS",'a')as tagFile:
+        tagFile.writelines(tagged_tweet)
+    return ""
+
+def tag_tweet_twit(tweet,tagger=StanfordPOSTagger('gate-EN-twitter.model')):
+    # get indicies for words 
+    tokens=twit_token.ize(tweet['text'])
+    text = " ".join(tokens)
+    tags = tagger.tag(tokens)
+    index_tags = []
+    for word,tag in tags:
+        try:
+            index_tags = [{'indices':[text.index(word),text.index(word)+len(word)],
+                           'category':tag} for word,tag in tags]
+        except:
+            try:
+                index_tags = [{'category':tag} for word,tag in tags]
+            except:
+                error_id = tweet["_id"]
+                print(error_id)
+                return error_id
+                
+    tweet['entities'].update({'Token':index_tags})
+    tagged_tweet = json.dumps(tweet)+"\n"
+    with open(POS_dir+tok+DBname+"_twitIE_POS",'a')as tagFile:
+        tagFile.writelines(tagged_tweet)
+    return ""
 
 pos_file_path =POS_dir+gate_out
 #id_pos_dic, index_pos_dic = feature.pos_extract(pos_file_path)
@@ -45,13 +93,7 @@ if __name__ == '__main__':
     # this code needs to change for Python 3 to use the function
 
     
-    def tag_tweet(tweet,tagger=StanfordPOSTagger('gate-EN-twitter.model')):
-        tags = tagger.tag(tweet['text'].split())
-        # get indicies for words 
-#        text 
-#        index_tags = [{'indices':[],'category':tag} for word,tag in tags]
-        tweet['entities'].update({'Token':tags})
-        return tweet
+
     #MongoDB credentials and collections
 #    DBname = 'test-tree'
 #    DBname = 'test_recurse'
@@ -63,18 +105,65 @@ if __name__ == '__main__':
     client = MongoClient()
     client = MongoClient(DBhost, DBport)
     DB = client[DBname]
-    test_mongo = DB.trump_tweets.find().limit(3)
-#    tagged_tweets = map(tag_tweet,test_mongo)
-    test_tweetC = deepcopy(test_tweet)
-    tagged_tweets = map(tag_tweet,[test_tweetC])
-    for twt in tagged_tweets:
-        i = twt['entities']
-        print(i)
-        print(test_tweet['entities'])
-        print(twt['text'])
-        print(twt['text'][89:97])
-        print("\n")
-#    outT = twitIE.tag('What is the airspeed of an unladen swallow ?'.split())
+    # get ids from trump root trees
+    trump_ids = list(DB.trump_tweets.distinct("_id"))
+    trump_parent_ids = list(DB.edge_list.distinct("edge_list.parent",{"_id":{"$in":trump_ids}}))
+    trump_child_ids = list(DB.edge_list.distinct("edge_list.child",{"_id":{"$in":trump_ids}}))
+    trump_thread_ids = trump_parent_ids + trump_child_ids
+    for tok in ["twit_"]:#,"zub_"]:
+        old_ids = []
+        # open the old file and create a list with the ids 
+        with open(POS_dir+tok+DBname+"_twitIE_POS",'r')as tagFile:
+            old_ids = [v for twt in tagFile.readlines() for k,v in json.loads(twt).items() if k=="id"]
+        
+        
+        stall_ids = [860631580502482944]
+        stall_text = ['@realDonaldTrump 🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕🖕']
 
+
+        # filter out ids for tweets that have already been saved 
+        test_start = time.time()
+        test_mongo = trump_ids+list(DB.replies_to_trump.distinct('_id'))
+        test_mongo = list(filter(lambda x: x not in old_ids+stall_ids,test_mongo))
+        print("NOT WRITTEN YET",len(test_mongo))
+        test_mongo = list(filter(lambda x: x in trump_thread_ids,test_mongo))
+        print("TRUMP is ROOT",len(test_mongo))
+        test_replies = list(DB.replies_to_trump.find({'_id':{'$in':test_mongo}}))
+        test_trump = list(DB.trump_tweets.find({'_id':{'$in':test_mongo}}))
+        test_end = time.time()
+        print("IDS METHOD TOOK",test_end-test_start)
+        # filter out ids for tweets that have already been saved 
+        
+        start = time.time()
+        mongo_tweets = list(DB.trump_tweets.find())+list(DB.replies_to_trump.find())
+        mongo_tweets = list(filter(lambda x: x['id'] not in old_ids+stall_ids,mongo_tweets))
+        print("NOT WRITTEN YET",len(mongo_tweets))
+        mongo_tweets = list(filter(lambda x: x['id'] in trump_thread_ids,mongo_tweets))
+        print("TRUMP is ROOT",len(mongo_tweets))
+        end = time.time()
+        print("TWEET METHOD TOOK",end-start)
+#        print(mongo_tweets[0])
+#        print(mongo_tweets[0]['_id'])
+        error_list = [860480579581640710,860480579787268096,860480580730880002,
+                      860480580965814274,860480581896896512,860480582274494468,
+                      860480582286925827,860480582731616257,860480582891053057,
+                      860480583008432128,860480583587303425,860480584010915841,
+                      860480584493273088,860480584669200384,860480584811982848,
+                      860480585428484097,860480585554427904,860480585629929472,
+                      860480586774962182,860480586863054848]
+        
+        for child__id in error_list:
+            print(child__id)
+            print("errored_tweet in trump_child_ids",child__id in trump_child_ids)
+            
+#        print("IDs_works?",set(mongo_tweets)-set(test_trump+test_replies))
+        
+        if tok == "twit_":
+            error_tweets = list(map(tag_tweet_twit,mongo_tweets))
+        elif tok == "zub_":
+            error_tweets = list(map(tag_tweet_zub,mongo_tweets))
+        
+        with open(POS_dir+"ERROR_IDS"+tok+DBname+"_twitIE_POS",'w')as tagFile:
+            tagFile.writelines(error_tweets)
 
 
