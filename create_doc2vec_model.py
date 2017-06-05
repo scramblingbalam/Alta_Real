@@ -14,7 +14,6 @@ import gensim
 #import pandas as pd
 #from glob import glob
 #import re
-import cPickle as pickle
 import sys
 import json
 # Open the file (make sure its in the same directory as this file)
@@ -29,7 +28,7 @@ else:
 
 
 LabeledSentence = gensim.models.doc2vec.LabeledSentence
-doc2vec_dir ="Data/doc2vec/"
+doc2vec_dir ="Data/doc2vec/not_trump"
 
 token_type = "zub_"
 #sentences = []
@@ -47,7 +46,7 @@ model_zub.save(doc2vec_dir+token_type+"rumorEval_doc2vec"+dims+".model")
 model_zub.init_sims(replace=True)
 model_zub.save(doc2vec_dir+token_type+"rumorEval_doc2vec_set"+dims+".model")
 
-
+    
 
 dims =int(dims)
 token_type = "twit_"
@@ -62,11 +61,11 @@ model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec"+dims+".model")
 model_twit.init_sims(replace=True)
 model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec_set"+dims+".model")
 
-print "\n"
-print model_zub.most_similar('black')
-print model_zub.docvecs.most_similar("552783667052167168")
-print model_twit.docvecs.most_similar("552783667052167168")
-print "\n"
+print("\n")
+print(model_zub.most_similar('sad'))
+print(model_zub.docvecs.most_similar("552783667052167168"))
+#print(model_twit.docvecs.most_similar('155014799909064704'))
+print("\n")
 #print model_twit.most_similar('black')
 
 #for i in sentences[1130]:
