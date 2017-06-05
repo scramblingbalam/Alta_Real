@@ -14,7 +14,7 @@ def all_keys(dic):
         handle python recursion limit
     """
     if isinstance(dic,dict):
-        return dic.keys()+[key for subdic in dic.itervalues() 
+        return list(dic.keys())+[key for subdic in dic.values() 
                                    if isinstance(subdic,dict) 
                                        for key in all_keys(subdic)]
     else:
@@ -29,7 +29,7 @@ def to_edge_list(dic):
 #    print "\n",dic
     if isinstance(dic,dict):
         return [(k,i) for k,v in dic.items() for i in v]+[ 
-               tup for subdic in dic.itervalues() for tup in to_edge_list(subdic)]
+               tup for subdic in dic.values() for tup in to_edge_list(subdic)]
     else:
         return dic
     
@@ -43,7 +43,19 @@ def subset_by_key(dic, keys2keep):
             if isinstance(v,dict) else v 
                 for k,v in dic.items() 
                     if k in keys2keep} 
-    
+
+def vecs_to_recs(vector_list,field_names):
+    return list(dict(zip(field_names,vector)) for vector in vector_list)
+
+def map_keys(func,dic):
+    """
+    TODO:
+        Test against all types 
+        handle python recursion limit
+    """
+    return {func(k):map_keys(func,v) 
+            if isinstance(v,dict) else v 
+                for k,v in dic.items()}     
 
 def subset_of_keys(dic, keys2keep):
     """
@@ -53,7 +65,7 @@ def subset_of_keys(dic, keys2keep):
         handle python recursion limit
     """
     if isinstance(dic,dict):
-        return dic.keys()+[key for subdic in dic.itervalues() 
+        return dic.keys()+[key for subdic in dic.values() 
                                    if isinstance(subdic,dict) 
                                        for key in subset_of_keys(subdic,keys2keep) if key in keys2keep]
     else:
@@ -67,7 +79,7 @@ def key_at_depth(dic, dpt):
         http://stackoverflow.com/questions/20425886/python-how-do-i-get-a-list-of-all-keys-in-a-dictionary-of-dictionaries-at-a-gi
     """
     if dpt > 0:
-        return [key for subdic in dic.itervalues() if isinstance(subdic,dict) 
+        return [key for subdic in dic.values() if isinstance(subdic,dict) 
                          for key in key_at_depth(subdic, dpt-1) ]
     else:
         if isinstance(dic,dict):
@@ -84,7 +96,7 @@ def value_all_depth(dic):
     lit comprehension from Martijn Pieters
         http://stackoverflow.com/questions/28015458/list-comprehension-to-flatten-a-dictionary-of-dictionaries"""
     if isinstance(dic,dict):    
-        return [v for nested in dic.itervalues() for v in nested.itervalues()]
+        return [v for nested in dic.values() for v in nested.values()]
     else:
         return 
 
