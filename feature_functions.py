@@ -14,6 +14,31 @@ import collections as coll
 import pprint
 pp = pprint.PrettyPrinter(indent=0)
 
+def translatelabel(label):
+    if label == 'supporting'or label == 'support':
+        return 0
+    if label == 'denying'or label == 'deny':
+        return 1
+    if label == 'appeal-for-more-information'or label == 'query':
+        return 2
+    if label == 'comment' or label == '0':
+        return 3
+    if label =='imp-denying':
+        return 4
+
+def inverse_label(label):
+    if label == 0:
+        return 'support'
+    if label == 1:
+        return 'deny'
+    if label == 2:
+        return 'query'
+    if label == 3:
+        return 'comment'
+    else:
+        return None
+    
+    
 def mean_W2V_vector(text,model):
     return np.mean(np.vstack([model[word] for word in text.split()]),0)
 
