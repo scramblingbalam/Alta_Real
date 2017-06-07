@@ -60,26 +60,45 @@ DB_train = client[DBname_t]
 model = joblib.load("tCRF_"+"_"+classifier+"_"+"_".join(featurename)+".crf_model")
 test_id = 856172056932700164L#862135824745467905L
 def label_tweet(tweet,root_tweet,pred,db):
-    print(tweet.get('predicted',None),"predicted")
-    print(tweet.get('label',None),"label")
+#    print(tweet.get('predicted',None),"predicted")
+#    print(tweet.get('label',None),"label")
+#    print(tweet.get('label_parent',None),"label_parent")
     sID = tweet['_id']
     if root_tweet == tweet:
-        print("Is tweet supporting or denying claim")
+        print("\n________________________________________")
+        print("Tweet is Root stance to claim")
         collection = db.trump_tweets
     else:
         collection = db.replies_to_trump
+        print("\n________________________________________")
+        print(root_tweet['_id'])
         print(root_tweet['text'])
-    print("\n")
-    print(sID)
+    parent_id = tweet.get('in_reply_to_status_id',None)
+    parent_not_root = parent_id != root_tweet['_id'] and tweet['user']['screen_name'] != 'realDonaldTrump' 
+                        
+    
+    if parent_not_root:
+        parent_tweet = list(db.replies_to_trump.find({'_id':parent_id}))[0]
+        print("|\n|")
+        print(parent_tweet['_id'])
+        print(parent_tweet['text'])
+        
+#    print("\n")
+
 #   print(tweet['user']['screen_name'])
     text = tweet['text']
+    print("|\n|")
+    print(sID)
     print(text)
-    print(pred)
+#    print(pred)
+#    print(tweet['in_reply_to_status_id'],root_tweet['_id'])
+#    print(tweet['user']['screen_name'])
+#    print(tweet['created_at'])
     collection.update_one(
             {'_id':sID},
             {'$set':{'predicted':pred}})
     try:
-        label=int(input("1=support  2=deny  3=query  4=comment\n>>\t"))-1
+        label=int(input("Stance to Root\n1=support  2=deny  3=query  4=comment\n>>\t"))-1
     except:
         print("EXCEPTION")
         label = None
@@ -89,30 +108,43 @@ def label_tweet(tweet,root_tweet,pred,db):
                 {'$set':{'label':feature.inverse_label(label)}})
     print(feature.inverse_label(label))
     time.sleep(0.25)
-    print("\n_____________________")
+    if parent_not_root:
+        try:
+            label_parent=int(input("Stance to Parent\n1=support  2=deny  3=query  4=comment\n>>\t"))-1
+        except:
+            print("EXCEPTION")
+            label_parent = None
+    elif parent_id == root_tweet['_id']:
+        label_parent = label
+    if isinstance(label_parent,int):
+        collection.update_one(
+                {'_id':sID},
+                {'$set':{'label_parent':feature.inverse_label(label_parent)}})
+    time.sleep(0.5)
+#    print("\n________________________________________")
 
 def label_thread(thread_id,DB): 
     preds = model.predict(event_feature_dic[thread_id])
     preds = map(feature.inverse_label,preds[0])
     root = list(DB.trump_tweets.find({'_id':thread_id}))[0]
-    for predicted,sID in zip(preds,event_ID_dic[thread_id][0]):
+    for predicted,sID in zip(preds,sorted(event_ID_dic[thread_id][0])):
         twt = list(DB.replies_to_trump.find({'_id':sID}))
         if not twt:
             twt = list(DB.trump_tweets.find({'_id':sID}))
         twt =twt[0]
-        if not twt.get('label',None):
+#        if not twt.get('label',None) and twt.get('in_reply_to_status_id',None)!= root['_id']:
+        if not twt.get('label',None) or not twt.get('label_parent',None) :
             label_tweet(twt,root,predicted,DB)
         
     print("THREAD LABELED!!!!")
-
-label_thread(test_id,DB_trump)
         
 
 ### working list of threads for labeling
-train =[
+train = [
 860477328882905089,#Win in house for 16244
 860580764944969728,#weekly address 6497
 860577873060651008# JOBS, JOBS, JOBS! https://t.co/UR0eetSEnO 9379
 ]
 
+label_thread(train[0],DB_trump)
 
