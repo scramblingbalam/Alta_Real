@@ -60,9 +60,9 @@ DB_train = client[DBname_t]
 model = joblib.load("tCRF_"+"_"+classifier+"_"+"_".join(featurename)+".crf_model")
 test_id = 856172056932700164L#862135824745467905L
 def label_tweet(tweet,root_tweet,pred,db):
-#    print(tweet.get('predicted',None),"predicted")
-#    print(tweet.get('label',None),"label")
-#    print(tweet.get('label_parent',None),"label_parent")
+    print(tweet.get('predicted',None),"predicted")
+    print(tweet.get('label',None),"label")
+    print(tweet.get('label_parent',None),"label_parent")
     sID = tweet['_id']
     if root_tweet == tweet:
         print("\n________________________________________")
@@ -103,7 +103,21 @@ def label_tweet(tweet,root_tweet,pred,db):
         print("EXCEPTION")
         label = None
     if isinstance(label,int):
-        collection.update_one(
+        if tweet['in_reply_to_screen_name'] == 'realDonaldTrump':
+            collection.update(
+                    {'text':text},
+                    {'$set':{'label':feature.inverse_label(label)}},
+                    upsert=False,
+                    multi=True
+                    )
+            collection.update(
+                    {'text':text},
+                    {'$set':{'label_parent':feature.inverse_label(label)}},
+                    upsert=False,
+                    multi=True
+                    )
+        else:
+            collection.update_one(
                 {'_id':sID},
                 {'$set':{'label':feature.inverse_label(label)}})
     print(feature.inverse_label(label))
@@ -133,8 +147,8 @@ def label_thread(thread_id,DB):
             twt = list(DB.trump_tweets.find({'_id':sID}))
         twt =twt[0]
 #        if not twt.get('label',None) and twt.get('in_reply_to_status_id',None)!= root['_id']:
-        if not twt.get('label',None) or not twt.get('label_parent',None) :
-            label_tweet(twt,root,predicted,DB)
+        if not twt.get('label',None) or not twt.get('label_parent',None):
+                label_tweet(twt,root,predicted,DB)
         
     print("THREAD LABELED!!!!")
         
