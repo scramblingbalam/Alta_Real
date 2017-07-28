@@ -2,7 +2,7 @@
 """
 Created on Wed Mar 22 12:51:10 2017
 
-@author: scram
+@author: Colin Drayton
 """
 
 
@@ -47,6 +47,26 @@ def subset_by_key(dic, keys2keep):
 def vecs_to_recs(vector_list,field_names):
     return list(dict(zip(field_names,vector)) for vector in vector_list)
 
+def map_list(func,container):
+    """
+    TODO:
+        Test against all types 
+        handle python recursion limit
+    """
+    return [map_list(func,v) 
+            if isinstance(v,(list,tuple)) else v 
+                for v in container] 
+
+def list_convert(func,container):
+    """
+    TODO:
+        Test against all types 
+        handle python recursion limit
+    """
+    return func([list_convert(func,v) 
+            if isinstance(v,(list,tuple)) else v 
+                for v in container])
+    
 def map_keys(func,dic):
     """
     TODO:
