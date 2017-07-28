@@ -10,7 +10,9 @@ import pystruct.learners as learners
 import cPickle as pickle
 import evaluation
 from feature_creation_mongo import translatelabel
+from feature_functions import inverse_label
 from sklearn.externals import joblib
+from sklearn.metrics import accuracy_score
 feature_list = []
 event_feature_dic ={}
 with open("event_model_dic","rb")as modelfile:
@@ -31,19 +33,36 @@ event_ID_dic = {}
   
 with open("event_ID_dic","rb")as modelfile:
     event_ID_dic = pickle.load(modelfile)
-    
-#X_train = event_feature_dic['ebola-essien']
-#y_train = event_target_dic['ebola-essien']
-#
-#model = GraphCRF(directed=True, inference_method="ad3")
-#
-#ssvm = learners.FrankWolfeSSVM(model=model, max_iter=5000, C=1)
-#ssvm.fit(X_train, y_train)
-#y_pred = ssvm.predict(X_train)
-#
-#for pred, test in zip(y_pred,y_train):
-#    for p,t in zip(pred,test):
-#        print p,t 
+
+print event_feature_dic.keys() 
+print event_target_dic.keys()   
+X_train = event_feature_dic['ebola-essien']
+y_train = event_target_dic['ebola-essien']
+
+
+#X_train = event_feature_dic['Big_win_in_the_House_-_ve']
+#y_train = event_target_dic['Big_win_in_the_House_-_ve']
+#id_train = event_ID_dic['Big_win_in_the_House_-_ve']
+
+#X_train = event_feature_dic['WeeklyAddress\U0001f1fa\U0001f1f8_http']
+#y_train = event_target_dic['WeeklyAddress\U0001f1fa\U0001f1f8_http']
+
+
+model = GraphCRF(directed=True, inference_method="ad3")
+
+ssvm = learners.FrankWolfeSSVM(model=model, max_iter=5000, C=1)
+ssvm.fit(X_train, y_train)
+y_pred = ssvm.predict(X_train)
+
+for pred, test in zip(y_pred,y_train):
+    for p,t in zip(pred,test):
+        print inverse_label(p),inverse_label(t) 
+
+y_train_flat = [i for I in y_train for i in I]
+y_pred_flat = [i for I in y_pred for i in I]
+test_acc = accuracy_score(y_train_flat, y_pred_flat, normalize=True, sample_weight=None)
+print test_acc
+
 classifier = 'treecrf'
 featurename = feature_string.split("_")
 
@@ -110,8 +129,8 @@ for k in event_target_dic:
         print(feature_string + ': ' + str(float(acc) / items))
 
 print(feature_list[0],"feature-list")
-print(event_target_dic.keys(),"TARGET_dic")
-print(event_ID_dic.keys(),"ID_dic")
+#print(event_target_dic.keys(),"TARGET_dic")
+#print(event_ID_dic.keys(),"ID_dic")
 evaluation.evaluate(id_preds, id_gts, classifier, featurename)
 
 joblib.dump(ssvm,"tCRF_"+"_"+classifier+"_"+"_".join(featurename)+".crf_model")
