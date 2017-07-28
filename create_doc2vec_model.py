@@ -22,7 +22,7 @@ import json
 """created the model with the below code"""
 args = sys.argv
 if len(args) > 1:
-    dims = int(args[1])
+    dims = int(args[1]) 
 else:
     dims = 300
 
@@ -63,6 +63,7 @@ model_twit.save(doc2vec_dir+token_type+"rumorEval_doc2vec_set"+dims+".model")
 
 print("\n")
 print(model_zub.most_similar('sad'))
+print(model_zub['sad']) 
 print(model_zub.docvecs.most_similar("552783667052167168"))
 #print(model_twit.docvecs.most_similar('155014799909064704'))
 print("\n")
