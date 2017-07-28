@@ -83,7 +83,10 @@ if not DB_train.edge_list.find_one():
 
 # Get tweets from DB
 for tweet in list(root_db.find())+list(reply_db.find())+list(reply_train_db.find())+list(root_train_db.find()):
-    text =  tweet["text"].lower()
+    if tweet.get("full_text", None):
+        text = tweet["full_text"].lower() 
+    else:
+        text =  tweet["text"].lower()
                 
     zub_text = " ".join(nltk.word_tokenize(re.sub(r'([^\s\w]|_)+', '',text)))
     zub_id_text_dic[tweet["id"]] = zub_text
