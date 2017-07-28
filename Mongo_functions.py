@@ -28,7 +28,7 @@ def get_tweet_time(TWEET):
     return ts,strfts
 
 def id2edgelist(mongo_id,collection):
-    list_dicts = list(collection.find({"_id":biggest_id}))[0]
+    list_dicts = list(collection.find({"_id":mongo_id}))[0]
     edges = []
     for i in list_dicts['edge_list']:
         edges.append((i['parent'],i['child']))
@@ -51,10 +51,10 @@ def edge_list(collections_list,DB):
     parent_ids = set(edge_coll.distinct("edge_list.parent"))
     root_ids = set(edge_coll.distinct("_id"))
     
-    print root_ids == parent_ids
+    print(root_ids == parent_ids)
     for num, collection in enumerate(collections_list):
         if num == 0:
-            print collection
+            print(collection)
             for tweet in DB[collection].find({}).sort("_id",1):
                 edge = [tweet["in_reply_to_status_id"],tweet["id"]]
                 if edge[1] not in child_ids:
@@ -70,17 +70,17 @@ def edge_list(collections_list,DB):
                             child_ids.add(edge[1])
                             parent_ids.add(edge[0])
                             at_root = list(edge_coll.find({"edge_list.child":edge[0]}))[0]["_id"]
-                            print at_root,"^--",edge[0],"<--",edge[1]
-    #                        if edge[1] in root_ids:
-    #                            subThread =list(edge_coll.find({"_id":edge[1]}))
-    #                            for edg in subThread[0]["edge_list"]:
-    #                                edge_coll.update_one(
-    #                                    {"edge_list.child":edge[0]},
-    #                                    {"$push": {"edge_list":
-    #                                        edg
-    #                                        }
-    #                                    })
-    #                            edge_coll.delete_one({"_id":edge[1]})                
+                            print( at_root,"^--",edge[0],"<--",edge[1])
+                            if edge[1] in root_ids:
+                                subThread =list(edge_coll.find({"_id":edge[1]}))
+                                for edg in subThread[0]["edge_list"]:
+                                    edge_coll.update_one(
+                                        {"edge_list.child":edge[0]},
+                                        {"$push": {"edge_list":
+                                            edg
+                                            }
+                                        })
+                                edge_coll.delete_one({"_id":edge[1]})                
                         elif edge[0] not in root_ids:
                             if db[parent_coll].find({'_id':edge[0]}):
                                 post = {"_id": edge[0],
@@ -89,7 +89,7 @@ def edge_list(collections_list,DB):
                                         "child":edge[1]}
                                         ]}
                                 post_id = edge_coll.insert_one(post).inserted_id
-                                print "^",post_id,"<--",edge[1]
+                                print( "^",post_id,"<--",edge[1])
                                 root_ids.add(post_id)
                                 child_ids.add(edge[1])
                                 parent_ids.add(edge[0])
@@ -106,21 +106,21 @@ def edge_list(collections_list,DB):
                                     })
                             child_ids.add(edge[1])
                             parent_ids.add(edge[0])
-                            print edge[0],"^--",edge[1]
-            print "Finished first collection"
+                            print( edge[0],"^--",edge[1])
+            print( "Finished first collection")
         else:
             # Decide if you want to do anything to with this to support different
             # strage approches....
             threads = 0
-            print collection
-            print "\t",collections_list[num-1]
-            children = collections_list[num-1]
+            print( collection)
+            print( "\t",collections_list[num-1])
+            children = (collections_list[num-1])
             child_ids = DB[children].distinct("id")
-            for tweet in DB[collection].find():
-                if edge[0]:
-                    if edge[1] in child_ids:
-                        threads += 1
-            print "threads", threads
+#            for tweet in DB[collection].find():
+#                if edge[0]:
+#                    if edge[1] in child_ids:
+#                        threads += 1
+            print( "threads", threads)
 
 
 
@@ -163,43 +163,52 @@ def remove_old_threads(DB,id_date):
         
     changes = [del_replies,del_roots,del_threads]
     if sum(changes)>0:
-        print 'Number deleted from "replies_to_tweets"',del_replies
-        print 'Number deleted from "trump_tweets"',del_roots
-        print 'Number deleted from "edge_list"',del_threads
+        print( 'Number deleted from "replies_to_tweets"',del_replies)
+        print( 'Number deleted from "trump_tweets"',del_roots)
+        print( 'Number deleted from "edge_list"',del_threads)
     else:
-        print "None deleted"
-    print "FINISHED"
+        print( "None deleted")
+    print("FINISHED")
     
             
 if __name__ == "__main__":
     client = MongoClient()
     client = MongoClient('localhost', 27017)
 #    db = client.Alta_Real
+    db = client.Alta_Real_New
+
 #    db = client["test-tree"]
-    db = client.test_tree
-    collection_names = ["replies_to_trump","trump_tweets","test_parents"]
+#    db = client.test_tree
     collection_names = ["replies_to_trump","trump_tweets"]
 
 #    """
     edge_list(collection_names,db)
     edge_collection = db.edge_list
-    big_thread = edge_collection.aggregate( [{ "$unwind" : "$edge_list" },
+    big_thread = list(edge_collection.aggregate( [{ "$unwind" : "$edge_list" },
             { "$group" : { "_id" : "$_id", "len" : { "$sum" : 1 } } },
-            { "$sort" : { "len" : -1 } },
+            { "$sort" : { "len" : 1 } },
             { "$limit" : 1 }
-            ] )
+            ] ))
 #    print list(big_thread)
-    biggest_id =  list(big_thread)[0]["_id"]
-    print biggest_id
+    print( len(big_thread) )
+    biggest_id =  big_thread[0]["_id"]
+    print( biggest_id)
     DG=nx.DiGraph()
     DG.add_edges_from(id2edgelist(biggest_id,edge_collection))
     nx.draw_random(DG, with_labels=False)
     nx.draw_random(DG, with_labels=True)
 #    """
-    old_id = 856425255862235136
+    pipeline_oldest =[{"$group":
+                {"_id":"$in_reply_to_screen_name",
+                "oldest":{"$min":"$id"},
+                "newest":{"$max":"$id"},
+                "count": {"$sum":1}
+                }    
+            }]
+
 #    oldest_time = list(db.replies_to_trump.find({"_id":old_id}))[0]["created_at"]
-#    oldest_id = list(db.replies_to_trump.find({"_id":old_id}))[0]["_id"]
-    remove_old_threads(db,old_id)
+    oldest_id =list(db.replies_to_trump.aggregate(pipeline_oldest))[0]["oldest"]
+    remove_old_threads(db,oldest_id)
 #    remove_old_threads(db,oldest_time)
     
     
